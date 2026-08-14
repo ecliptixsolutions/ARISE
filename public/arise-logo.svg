@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Arise Healthcare Solutions</title>
+  <desc id="desc">Arise Healthcare Solutions blue triangular A logo with company name.</desc>
+  <defs>
+    <linearGradient id="blueMain" x1="154" x2="358" y1="100" y2="306" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7fd5ee" />
+      <stop offset=".45" stop-color="#1195d4" />
+      <stop offset="1" stop-color="#0875c9" />
+    </linearGradient>
+    <linearGradient id="blueLight" x1="192" x2="338" y1="86" y2="288" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#b7ecf8" />
+      <stop offset=".55" stop-color="#42bfe4" />
+      <stop offset="1" stop-color="#0b86ce" />
+    </linearGradient>
+    <linearGradient id="blueDeep" x1="153" x2="310" y1="236" y2="314" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0875c9" />
+      <stop offset=".5" stop-color="#12a7dc" />
+      <stop offset="1" stop-color="#0659aa" />
+    </linearGradient>
+  </defs>
+  <circle cx="256" cy="256" r="248" fill="#fff" />
+  <g>
+    <path fill="url(#blueLight)" d="M250 76 118 288l54-27 78-126 57 93 42-28z" />
+    <path fill="url(#blueMain)" d="M250 76 349 200l-42 28-43-70-92 148-54-18z" opacity=".95" />
+    <path fill="url(#blueDeep)" d="M172 306 285 274 172 261 118 288z" />
+    <path fill="#18b8df" d="M286 274 349 200l45 88-37-17-26-50z" />
+    <path fill="#6ccbe8" d="M349 200 394 288 333 235z" opacity=".9" />
+    <path fill="#0b7fca" d="M286 274 394 288 357 271z" />
+    <path fill="#fff" d="M218 246 277 162 331 254z" />
+    <path fill="#0a8ed4" d="M218 246 331 254 286 274z" />
+  </g>
+  <text x="256" y="373" fill="#138bd2" font-family="Georgia, 'Times New Roman', serif" font-size="70" font-weight="700" text-anchor="middle">Arise</text>
+  <text x="256" y="425" fill="#d6492f" font-family="Georgia, 'Times New Roman', serif" font-size="36" font-weight="700" text-anchor="middle">Healthcare Solutions</text>
+</svg>

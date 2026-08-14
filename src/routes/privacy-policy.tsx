@@ -1,0 +1,102 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { Layout, PageHero } from "@/components/site/Layout";
+import { settings } from "@/lib/site-data";
+
+const sections = [
+  {
+    title: "Information We Collect",
+    body: [
+      "When you submit a contact, quote or repair request form, Arise Healthcare Solutions may collect your name, phone number, WhatsApp number, email address, company or organisation name, city and enquiry details.",
+      "We may also collect equipment information such as equipment type, brand, model, serial number, fault description, repair history and other details needed to respond to your request.",
+      "If you upload equipment photographs, videos or supporting documents, those files may be used to understand the equipment condition and prepare repair, servicing or quotation guidance.",
+    ],
+  },
+  {
+    title: "Patient Information Notice",
+    body: [
+      "Users should not submit patient medical records through this website.",
+      "Users should not upload sensitive patient-identifiable information in images, documents, videos or messages. Please remove or cover patient names, identifiers, reports and confidential clinical data before sending equipment information.",
+    ],
+  },
+  {
+    title: "How We Use Information",
+    body: [
+      "Submitted information is used only for enquiries, quotations, repairs, servicing, equipment inspection, customer support and customer communication.",
+      "We may contact you by phone, email or WhatsApp to clarify equipment details, share quotations, coordinate pickup or delivery, provide repair updates or respond to service questions.",
+      "Personal information will not be sold.",
+    ],
+  },
+  {
+    title: "Storage, Security and Service Providers",
+    body: [
+      "We take reasonable steps to keep submitted information secure and accessible only to people involved in responding to your enquiry or delivering the requested service.",
+      "We may use trusted third-party service providers for website hosting, form processing, communication, file storage, analytics or business operations. These providers should only process information for the purpose of supporting our services.",
+    ],
+  },
+  {
+    title: "Cookies and Analytics",
+    body: [
+      "The website may use cookies or analytics tools to understand website performance, improve content and maintain reliable service. Browser settings may allow you to limit or disable certain cookies.",
+    ],
+  },
+  {
+    title: "User Rights and Updates",
+    body: [
+      "You may contact Arise Healthcare Solutions to ask questions about submitted information, request corrections or request deletion where applicable.",
+      "This Privacy Policy may be updated when website features, service processes or legal requirements change. The latest version will be available on this page.",
+    ],
+  },
+  {
+    title: "Privacy Contact",
+    body: [
+      `For privacy questions, contact ${settings.company} at ${settings.emailPlaceholder}, ${settings.phonePlaceholder} or ${settings.secondaryPhonePlaceholder}.`,
+    ],
+  },
+];
+
+export const Route = createFileRoute("/privacy-policy")({
+  head: () => ({
+    meta: [
+      { title: "Privacy Policy | Arise Healthcare Solutions" },
+      {
+        name: "description",
+        content:
+          "Privacy Policy for Arise Healthcare Solutions enquiries, repair requests, quotation forms, uploaded equipment images and customer communication.",
+      },
+      { property: "og:title", content: "Privacy Policy | Arise Healthcare Solutions" },
+      {
+        property: "og:description",
+        content:
+          "How Arise Healthcare Solutions handles information submitted through website forms and customer communication.",
+      },
+    ],
+  }),
+  component: Page,
+});
+
+function Page() {
+  return (
+    <Layout>
+      <PageHero
+        eyebrow="Legal"
+        title="Privacy Policy"
+        subtitle="How Arise Healthcare Solutions handles enquiry, repair and service information."
+        showBack
+      />
+      <article className="container-x mx-auto max-w-4xl py-14">
+        <div className="space-y-8 rounded-3xl border border-border bg-white p-6 shadow-sm md:p-8">
+          {sections.map((section) => (
+            <section key={section.title}>
+              <h2 className="font-display text-2xl font-bold text-navy">{section.title}</h2>
+              {section.body.map((paragraph) => (
+                <p key={paragraph} className="mt-3 text-foreground/80">
+                  {paragraph}
+                </p>
+              ))}
+            </section>
+          ))}
+        </div>
+      </article>
+    </Layout>
+  );
+}

@@ -1,0 +1,685 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-navy: var(--navy);
+  --color-navy-foreground: var(--navy-foreground);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-cyan: var(--cyan);
+  --color-orange: var(--orange);
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--surface-alt);
+  --color-gold: var(--gold-background);
+  --color-gold-soft: var(--gold-soft);
+  --color-gold-border: var(--gold-border);
+  --color-gold-accent: var(--gold-accent);
+  --color-gold-text: var(--gold-text);
+}
+
+:root {
+  --font-primary: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --text-readable-xs: 0.875rem;
+  --text-readable-sm: 0.9375rem;
+  --text-readable-base: 1rem;
+  --text-readable-md: 1.0625rem;
+  --text-readable-lg: 1.125rem;
+  --text-readable-xl: 1.25rem;
+  --text-readable-2xl: 1.5rem;
+  --text-readable-3xl: 2rem;
+  --text-readable-4xl: 2.5rem;
+  --heading-page-readable: clamp(2.25rem, 4vw, 3.5rem);
+  --heading-section-readable: clamp(1.9rem, 3vw, 2.75rem);
+  --heading-subsection-readable: clamp(1.4rem, 2vw, 1.85rem);
+  --radius: 0.875rem;
+  --background: #ffffff;
+  --background-soft: #f7f9fb;
+  --background-blue: #eef6fa;
+  --surface-blue: #e5f3f8;
+  --surface: #eef6fa;
+  --surface-alt: #e5f3f8;
+  --card: #ffffff;
+  --card-foreground: var(--foreground);
+  --popover: #ffffff;
+  --popover-foreground: var(--foreground);
+  --primary: #218eaf;
+  --primary-foreground: #ffffff;
+  --brand: #1698c2;
+  --brand-foreground: #ffffff;
+  --navy: #3f4248;
+  --navy-foreground: #3f4248;
+  --cyan: #1698c2;
+  --orange: #c19e63;
+  --secondary: #f7f9fb;
+  --secondary-foreground: var(--foreground);
+  --foreground: #60656d;
+  --muted: #eef6fa;
+  --muted-foreground: #7b818a;
+  --accent: #fff5d9;
+  --accent-foreground: #3f4248;
+  --destructive: #c2414b;
+  --destructive-foreground: #ffffff;
+  --border: #dce7ec;
+  --input: #dce7ec;
+  --ring: #218eaf;
+  --gold-background: #f3e7cb;
+  --gold-soft: #fff5d9;
+  --gold-border: #d3b16b;
+  --gold-accent: #c19e63;
+  --gold-text: #80652e;
+  --shadow-soft: 0 18px 45px rgba(68, 92, 105, 0.12);
+}
+
+.dark {
+  --background: #ffffff;
+  --foreground: #60656d;
+  --surface: #eef6fa;
+  --surface-alt: #e5f3f8;
+  --card: #ffffff;
+  --card-foreground: var(--foreground);
+  --popover: #ffffff;
+  --popover-foreground: var(--foreground);
+  --primary: #218eaf;
+  --primary-foreground: #ffffff;
+  --brand: #1698c2;
+  --brand-foreground: #ffffff;
+  --navy: #3f4248;
+  --navy-foreground: #3f4248;
+  --cyan: #1698c2;
+  --orange: #c19e63;
+  --secondary: #f7f9fb;
+  --secondary-foreground: var(--foreground);
+  --muted: #eef6fa;
+  --muted-foreground: #7b818a;
+  --accent: #fff5d9;
+  --accent-foreground: var(--foreground);
+  --border: #dce7ec;
+  --input: #dce7ec;
+  --ring: #218eaf;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    scroll-behavior: smooth;
+    font-family: var(--font-primary);
+    text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
+    font-kerning: normal;
+    font-feature-settings:
+      "kern" 1,
+      "liga" 1,
+      "calt" 1;
+    font-optical-sizing: auto;
+    font-synthesis: none;
+  }
+  body,
+  body * {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-kerning: normal;
+    font-feature-settings:
+      "kern" 1,
+      "liga" 1,
+      "calt" 1;
+    font-optical-sizing: auto;
+    font-synthesis: none;
+  }
+  body {
+    background:
+      radial-gradient(circle at 20% 20%, rgba(93, 201, 224, 0.18), transparent 38%),
+      radial-gradient(circle at 85% 30%, rgba(193, 158, 99, 0.1), transparent 30%),
+      linear-gradient(180deg, #ffffff 0%, #eef6fa 55%, #ffffff 100%);
+    color: var(--color-foreground);
+    font-family: var(--font-primary);
+    overflow-x: hidden;
+  }
+  body,
+  #root {
+    font-family: var(--font-primary);
+  }
+  body {
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1.7;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-primary);
+    color: var(--color-navy);
+  }
+  h1 {
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.12;
+  }
+  h2 {
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+  }
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.3;
+  }
+  p,
+  li,
+  dd,
+  dt {
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1.7;
+  }
+  a,
+  summary,
+  nav {
+    letter-spacing: 0;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+  button,
+  [role="button"] {
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+  label {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+  input,
+  textarea,
+  select {
+    background-color: #ffffff;
+    color: var(--color-navy);
+    font-size: 16px;
+    font-weight: 500;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-muted-foreground);
+  }
+  :focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, white);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  main h1 {
+    font-family: var(--font-primary);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.12;
+  }
+  .site-hero-heading {
+    font-size: clamp(2.15rem, 10vw, 3.1rem);
+    font-weight: 700 !important;
+    letter-spacing: -0.025em;
+    line-height: 1.04;
+    max-width: 12ch;
+  }
+  .site-hero-heading .text-primary {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .page-title {
+    font-weight: 700 !important;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+  }
+  main h2 {
+    font-family: var(--font-primary);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+  }
+  main h3,
+  [class*="card"] h3 {
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.3;
+  }
+  [class*="uppercase"],
+  [class*="tracking-wider"],
+  [class*="tracking-\\[0\\.2em\\]"] {
+    font-weight: 600;
+    letter-spacing: 0.06em;
+  }
+  @media (min-width: 768px) {
+    .site-hero-heading {
+      font-size: clamp(3rem, 5vw, 4.75rem);
+      max-width: 12ch;
+    }
+  }
+}
+
+@utility container-x {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+  max-width: 80rem;
+  @media (min-width: 768px) {
+    padding-inline: 2rem;
+  }
+}
+
+@utility grad-navy {
+  background:
+    radial-gradient(circle at 12% 20%, rgba(191, 232, 243, 0.68), transparent 34%),
+    radial-gradient(circle at 82% 8%, rgba(255, 245, 217, 0.78), transparent 32%),
+    linear-gradient(135deg, #ffffff 0%, #eef6fa 56%, #e5f3f8 100%);
+}
+@utility grad-blue {
+  background-image: linear-gradient(135deg, #126d8d 0%, #1698c2 100%);
+}
+@utility grad-soft {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(93, 201, 224, 0.18), transparent 38%),
+    radial-gradient(circle at 85% 30%, rgba(193, 158, 99, 0.1), transparent 30%),
+    linear-gradient(180deg, #ffffff 0%, #eef6fa 55%, #ffffff 100%);
+}
+@utility card-glass {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-soft);
+}
+@utility ring-brand {
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-primary) 20%, transparent);
+}
+@utility logo-mask {
+  clip-path: circle(46% at 50% 50%);
+  background: var(--color-card);
+}
+@utility gold-card {
+  background: linear-gradient(145deg, #fff9eb 0%, #f3e7cb 100%);
+  border: 1px solid rgba(193, 158, 99, 0.35);
+  box-shadow: 0 18px 45px rgba(107, 118, 128, 0.12);
+}
+@utility blue-panel {
+  background: linear-gradient(145deg, #fff9eb 0%, #f3e7cb 100%);
+  border: 1px solid rgba(193, 158, 99, 0.45);
+  box-shadow: 0 18px 45px rgba(107, 118, 128, 0.14);
+}
+@utility cta-gold {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(255, 245, 217, 0.92), transparent 34%),
+    linear-gradient(145deg, #fff9eb 0%, #f3e7cb 100%);
+  border: 1px solid rgba(193, 158, 99, 0.48);
+  box-shadow: 0 20px 48px rgba(107, 118, 128, 0.14);
+}
+@utility btn-primary {
+  background-image: linear-gradient(135deg, #126d8d 0%, #1698c2 100%);
+  color: #ffffff;
+  box-shadow: 0 14px 28px rgba(33, 142, 175, 0.24);
+}
+
+header .font-display.text-base {
+  font-size: var(--text-readable-base) !important;
+}
+
+header [class*="text-[11px]"] {
+  font-size: 0.75rem !important;
+  line-height: 1.35 !important;
+}
+
+header nav a,
+header nav button,
+header [class*="absolute"] a {
+  font-size: var(--text-readable-base) !important;
+  line-height: 1.35 !important;
+}
+
+header [class*="absolute"] [class*="text-xs"] {
+  font-size: var(--text-readable-xs) !important;
+  line-height: 1.4 !important;
+}
+
+.site-header-premium,
+.site-header-premium * {
+  letter-spacing: 0;
+}
+
+/* Top contact / utility bar — sits above the main navbar */
+.top-contact-bar,
+.top-contact-bar * {
+  letter-spacing: 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+@media (min-width: 768px) {
+  .top-contact-bar,
+  .top-contact-bar * {
+    font-size: 0.85rem;
+  }
+}
+
+/* Top contact bar height — single source of truth; the top bar, the home
+   header overlay offset and the hero top padding all use this value */
+:root {
+  --topbar-h: 4.25rem;
+}
+@media (max-width: 359px) {
+  :root {
+    --topbar-h: 5.25rem;
+  }
+}
+@media (min-width: 768px) {
+  :root {
+    --topbar-h: 2.5rem;
+  }
+}
+
+/* Home hero top padding accounts for the top contact bar (--topbar-h set by Layout) */
+.home-hero article {
+  padding-top: calc(7rem + var(--topbar-h, 0px));
+}
+@media (min-width: 768px) {
+  .home-hero article {
+    padding-top: calc(9rem + var(--topbar-h, 0px));
+  }
+}
+
+header > div:last-child a,
+header > div:last-child button,
+header .container-x > div:last-child a {
+  font-size: var(--text-readable-sm) !important;
+  line-height: 1.35 !important;
+}
+
+main > :not(.home-hero) .page-title,
+main > :not(.home-hero) h1 {
+  font-size: var(--heading-page-readable) !important;
+  line-height: 1.12 !important;
+}
+
+main > :not(.home-hero) h2 {
+  font-size: var(--heading-section-readable) !important;
+  line-height: 1.18 !important;
+}
+
+main > :not(.home-hero) h3 {
+  font-size: clamp(1.25rem, 1.7vw, 1.45rem) !important;
+  line-height: 1.3 !important;
+}
+
+main > :not(.home-hero) h4,
+main > :not(.home-hero) h5,
+main > :not(.home-hero) h6 {
+  font-size: var(--text-readable-xl) !important;
+  line-height: 1.3 !important;
+}
+
+main > :not(.home-hero) p,
+main > :not(.home-hero) li,
+main > :not(.home-hero) dd,
+main > :not(.home-hero) dt {
+  font-size: var(--text-readable-md) !important;
+  line-height: 1.65 !important;
+}
+
+main > :not(.home-hero) :is([class*="text-xs"], [class*="text-[10px]"], [class*="text-[11px]"]) {
+  font-size: var(--text-readable-xs) !important;
+  line-height: 1.4 !important;
+}
+
+main > :not(.home-hero) :is([class*="uppercase"], [class*="tracking-wider"]) {
+  font-size: 0.8125rem !important;
+  line-height: 1.4 !important;
+}
+
+main > :not(.home-hero) :is(a, button, [role="button"]) {
+  font-size: var(--text-readable-base) !important;
+  line-height: 1.35 !important;
+}
+
+main > :not(.home-hero) :is(input, select, textarea) {
+  min-height: 48px;
+  font-size: var(--text-readable-base) !important;
+  line-height: 1.4 !important;
+}
+
+main > :not(.home-hero) label,
+main > :not(.home-hero) label span {
+  font-size: var(--text-readable-sm) !important;
+  line-height: 1.4 !important;
+}
+
+main > :not(.home-hero) table {
+  font-size: var(--text-readable-base) !important;
+}
+
+main > :not(.home-hero) thead,
+main > :not(.home-hero) th {
+  font-size: var(--text-readable-xs) !important;
+}
+
+footer p,
+footer li,
+footer a,
+footer span {
+  font-size: var(--text-readable-base) !important;
+  line-height: 1.65 !important;
+}
+
+footer h4 {
+  font-size: var(--text-readable-lg) !important;
+  line-height: 1.35 !important;
+}
+
+footer .font-display {
+  font-size: var(--text-readable-xl) !important;
+  line-height: 1.25 !important;
+}
+
+footer [class*="text-xs"] {
+  font-size: var(--text-readable-xs) !important;
+  line-height: 1.45 !important;
+}
+
+footer .btn-primary {
+  font-size: var(--text-readable-base) !important;
+}
+
+footer > div:last-child,
+footer > div:last-child div,
+footer > div:last-child a {
+  font-size: var(--text-readable-xs) !important;
+  line-height: 1.45 !important;
+}
+
+.admin-shell {
+  font-size: var(--text-readable-base);
+}
+
+.admin-shell aside nav,
+.admin-shell aside a,
+.admin-shell aside button {
+  font-size: var(--text-readable-base) !important;
+  line-height: 1.4 !important;
+}
+
+.admin-shell aside [class*="text-xs"] {
+  font-size: var(--text-readable-xs) !important;
+}
+
+.admin-shell h1 {
+  font-size: clamp(1.9rem, 3vw, 2.25rem) !important;
+  line-height: 1.15 !important;
+}
+
+.admin-shell h2 {
+  font-size: var(--text-readable-xl) !important;
+  line-height: 1.25 !important;
+}
+
+.admin-shell p,
+.admin-shell li,
+.admin-shell a,
+.admin-shell button,
+.admin-shell label,
+.admin-shell td,
+.admin-shell input,
+.admin-shell select,
+.admin-shell textarea {
+  font-size: var(--text-readable-base) !important;
+  line-height: 1.45 !important;
+}
+
+.admin-shell input,
+.admin-shell select,
+.admin-shell textarea {
+  min-height: 48px;
+}
+
+.admin-shell th,
+.admin-shell [class*="text-xs"],
+.admin-shell [class*="text-[11px]"] {
+  font-size: var(--text-readable-xs) !important;
+  line-height: 1.4 !important;
+}
+
+.admin-shell [class*="text-lg"] {
+  font-size: var(--text-readable-xl) !important;
+}
+
+.admin-shell [class*="text-2xl"] {
+  font-size: var(--text-readable-3xl) !important;
+}
+
+.admin-shell [class*="text-3xl"] {
+  font-size: clamp(2rem, 3vw, 2.25rem) !important;
+}
+
+@media (max-width: 1023px) {
+  header [class*="border-t"] a,
+  header [class*="border-t"] button {
+    font-size: var(--text-readable-lg) !important;
+    line-height: 1.35 !important;
+  }
+
+  header [class*="border-t"] [class*="border-l"] a {
+    font-size: var(--text-readable-base) !important;
+  }
+}
+
+@media (max-width: 767px) {
+  main > :not(.home-hero) p,
+  main > :not(.home-hero) li,
+  main > :not(.home-hero) dd,
+  main > :not(.home-hero) dt {
+    font-size: var(--text-readable-base) !important;
+  }
+
+  footer p,
+  footer li,
+  footer a,
+  footer span {
+    font-size: var(--text-readable-base) !important;
+  }
+}
+
+/* Responsive header logo sizing (inline size prop is overridden intentionally) */
+.site-header-premium .header-logo {
+  width: 42px !important;
+  height: 42px !important;
+}
+@media (min-width: 640px) {
+  .site-header-premium .header-logo {
+    width: 56px !important;
+    height: 56px !important;
+  }
+}
+@media (min-width: 1024px) {
+  .site-header-premium .header-logo {
+    width: 64px !important;
+    height: 64px !important;
+  }
+}
+.site-header-premium.is-scrolled .header-logo {
+  width: 40px !important;
+  height: 40px !important;
+}
+@media (min-width: 640px) {
+  .site-header-premium.is-scrolled .header-logo {
+    width: 52px !important;
+    height: 52px !important;
+  }
+}
+@media (min-width: 1024px) {
+  .site-header-premium.is-scrolled .header-logo {
+    width: 58px !important;
+    height: 58px !important;
+  }
+}
+
+/* Prevent phantom horizontal scroll from transformed/overflowing content */
+html {
+  overflow-x: clip;
+}
+
+@media (max-width: 639px) {
+  .home-hero h1 {
+    max-width: 11ch !important;
+    font-size: clamp(2.15rem, 12vw, 3.15rem) !important;
+    line-height: 1.02 !important;
+  }
+
+  .home-hero article {
+    align-items: flex-start !important;
+    padding-top: calc(6.5rem + var(--topbar-h, 0px)) !important;
+    padding-bottom: 6.5rem !important;
+  }
+
+  .home-hero [class*="min-h-[640px]"] {
+    min-height: min(760px, calc(100vh - 86px - var(--topbar-h, 0px))) !important;
+  }
+}
