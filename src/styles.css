@@ -629,35 +629,35 @@ footer > div:last-child a {
 
 /* Responsive header logo sizing (inline size prop is overridden intentionally) */
 .site-header-premium .header-logo {
-  width: 42px !important;
-  height: 42px !important;
+  width: 52px !important;
+  height: 52px !important;
 }
 @media (min-width: 640px) {
   .site-header-premium .header-logo {
-    width: 56px !important;
-    height: 56px !important;
+    width: 68px !important;
+    height: 68px !important;
   }
 }
 @media (min-width: 1024px) {
   .site-header-premium .header-logo {
-    width: 64px !important;
-    height: 64px !important;
+    width: 78px !important;
+    height: 78px !important;
   }
 }
 .site-header-premium.is-scrolled .header-logo {
-  width: 40px !important;
-  height: 40px !important;
+  width: 48px !important;
+  height: 48px !important;
 }
 @media (min-width: 640px) {
   .site-header-premium.is-scrolled .header-logo {
-    width: 52px !important;
-    height: 52px !important;
+    width: 62px !important;
+    height: 62px !important;
   }
 }
 @media (min-width: 1024px) {
   .site-header-premium.is-scrolled .header-logo {
-    width: 58px !important;
-    height: 58px !important;
+    width: 70px !important;
+    height: 70px !important;
   }
 }
 

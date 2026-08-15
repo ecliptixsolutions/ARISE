@@ -1,7 +1,7 @@
-export function Logo({ size = 44, className = "" }: { size?: number; className?: string }) {
+export function Logo({ size = 56, className = "" }: { size?: number; className?: string }) {
   return (
     <img
-      src="/Arise-logo.jpeg"
+      src="/arise-logo.png"
       alt="Arise Healthcare Solutions"
       height={size}
       className={`block shrink-0 object-contain ${className}`}

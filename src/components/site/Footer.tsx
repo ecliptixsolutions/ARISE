@@ -118,7 +118,7 @@ export function Footer() {
           <div className="sm:col-span-2 lg:col-span-1">
             {/* Logo + name */}
             <div className="mb-5 flex items-center gap-3">
-              <Logo size={44} />
+              <Logo size={56} />
               <div>
                 <div className="font-display text-base font-bold text-white leading-tight">
                   Arise Healthcare

@@ -482,12 +482,12 @@ export function Header() {
               : "border-white/40 bg-white/80 shadow-[0_4px_24px_rgba(31,49,72,0.12)]"
           }`}
         >
-          <div className="mx-auto flex h-[68px] max-w-[1600px] items-center justify-between gap-4 sm:h-[76px] md:h-[84px]">
+          <div className="mx-auto flex h-[68px] max-w-[1600px] items-center justify-between gap-3 sm:h-[76px] sm:gap-4 md:h-[84px]">
 
             {/* Logo + brand name */}
-            <Link to="/" className="flex shrink-0 items-center gap-2.5 md:gap-3">
-              <Logo size={52} className="transition-all duration-300 md:size-[60px]" />
-              <div className="hidden text-[1.05rem] font-bold leading-tight sm:block md:text-[1.2rem] xl:text-[1.3rem]">
+            <Link to="/" className="flex min-w-0 flex-1 items-center gap-2 min-[1240px]:flex-none min-[1240px]:shrink-0 md:gap-3">
+              <Logo size={78} className="header-logo transition-all duration-300" />
+              <div className="block min-w-0 max-w-[min(52vw,13rem)] text-[clamp(0.72rem,3.1vw,1.05rem)] font-bold leading-tight sm:max-w-none sm:text-[1.05rem] md:text-[1.2rem] xl:text-[1.3rem]">
                 <span className="text-[#138bd2]">Arise</span>{" "}
                 <span className="text-[#d6492f]">Healthcare Solutions</span>
               </div>
@@ -666,7 +666,7 @@ export function Header() {
             </nav>
 
             {/* Right: Animated CTA + Search + hamburger */}
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               {/* Animated rotating CTA — desktop only */}
               <RotatingCTA isOverlay={isOverlay} />
 
