@@ -667,6 +667,39 @@ html {
 }
 
 @media (max-width: 639px) {
+  main,
+  section,
+  article,
+  footer,
+  header,
+  .container-x {
+    min-width: 0;
+  }
+
+  main :is(div, article, section, aside, nav, form, ul, li, a, button, input, select, textarea) {
+    min-width: 0;
+  }
+
+  main :is(img, video, canvas, svg),
+  footer :is(img, video, canvas, svg) {
+    max-width: 100%;
+  }
+
+  main :is(h1, h2, h3, h4, h5, h6, p, li, dd, dt, a, button, label, span),
+  footer :is(h1, h2, h3, h4, h5, h6, p, li, a, button, span) {
+    overflow-wrap: anywhere;
+  }
+
+  main :is(a, button, [role="button"]) {
+    min-height: 44px;
+  }
+
+  main :is(input, select, textarea),
+  footer :is(input, select, textarea) {
+    width: 100%;
+    max-width: 100%;
+  }
+
   .home-hero h1 {
     max-width: 11ch !important;
     font-size: clamp(2.15rem, 12vw, 3.15rem) !important;
@@ -681,5 +714,20 @@ html {
 
   .home-hero [class*="min-h-[640px]"] {
     min-height: min(760px, calc(100vh - 86px - var(--topbar-h, 0px))) !important;
+  }
+
+  .home-hero :is(a, button, [role="button"]) {
+    overflow-wrap: normal;
+  }
+
+  .top-contact-bar [data-status] {
+    max-width: 100%;
+  }
+
+  .top-contact-bar [data-status] > span:last-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }

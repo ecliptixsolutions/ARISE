@@ -311,9 +311,9 @@ export function FloatingActions() {
   };
 
   return (
-    <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-[60] flex flex-col items-end gap-3 sm:bottom-[calc(1.25rem+env(safe-area-inset-bottom))] sm:right-5">
+    <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] right-3 z-[60] flex flex-col items-end gap-3 sm:bottom-[calc(1.25rem+env(safe-area-inset-bottom))] sm:right-5">
       {chatOpen && (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-200 w-[min(calc(100vw-1rem),390px)] overflow-hidden rounded-[24px] border border-white/70 bg-white shadow-2xl shadow-primary/25 sm:w-[390px]">
+        <div className="flex max-h-[calc(100dvh-8.5rem)] w-[calc(100vw-24px)] animate-in flex-col overflow-hidden rounded-[24px] border border-white/70 bg-white shadow-2xl shadow-primary/25 duration-200 fade-in slide-in-from-bottom-4 sm:max-h-none sm:w-[390px]">
           <div className="flex items-center justify-between bg-[linear-gradient(135deg,#071C2C,#138bd2_58%,#18b9bb)] px-4 py-3.5 text-white">
             <div className="flex min-w-0 items-center gap-3">
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/18 bg-white/14 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
@@ -337,7 +337,7 @@ export function FloatingActions() {
             </button>
           </div>
 
-          <div ref={scrollRef} className="h-[min(58vh,430px)] space-y-3 overflow-y-auto bg-[#f7fbfd] p-4">
+          <div ref={scrollRef} className="min-h-[220px] flex-1 space-y-3 overflow-y-auto bg-[#f7fbfd] p-4 sm:h-[min(58vh,430px)] sm:flex-none">
             {messages.map((message, index) => (
               <div key={`${message.role}-${index}`} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[86%] ${message.role === "user" ? "items-end" : "items-start"} flex flex-col gap-2`}>

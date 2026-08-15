@@ -117,9 +117,9 @@ export function Footer() {
           {/* ── Brand column ── */}
           <div className="sm:col-span-2 lg:col-span-1">
             {/* Logo + name */}
-            <div className="mb-5 flex items-center gap-3">
+            <div className="mb-5 flex min-w-0 items-center gap-3">
               <Logo size={56} />
-              <div>
+              <div className="min-w-0">
                 <div className="font-display text-base font-bold text-white leading-tight">
                   Arise Healthcare
                 </div>
@@ -133,7 +133,7 @@ export function Footer() {
             </div>
 
             {/* Description */}
-            <p className="mb-5 text-[13px] leading-relaxed text-white/40 max-w-[260px]">
+            <p className="mb-5 max-w-[260px] text-[13px] leading-relaxed text-white/40">
               Independent medical equipment repair, servicing and technical support for hospitals,
               clinics and diagnostic centres.
             </p>
@@ -167,7 +167,7 @@ export function Footer() {
                   aria-label="Email Arise Healthcare Solutions"
                 >
                   <Mail className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#18b9bb]" />
-                  <span className="break-all">{settings.emailPlaceholder}</span>
+                  <span className="min-w-0 break-words">{settings.emailPlaceholder}</span>
                 </a>
               </li>
               <li className="flex items-start gap-2 text-[13px] text-white/40">
@@ -323,11 +323,11 @@ export function Footer() {
         <div className="container-x py-8">
           <div className="flex flex-col items-start gap-5 md:flex-row md:items-center md:justify-between">
             {/* Text */}
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex min-w-0 items-center gap-3 md:shrink-0">
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#18b9bb]/15 ring-1 ring-[#18b9bb]/25">
                 <Mail className="h-5 w-5 text-[#18b9bb]" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="text-sm font-bold text-white">
                   Medical Equipment Updates &amp; Insights
                 </div>
@@ -345,7 +345,7 @@ export function Footer() {
             ) : (
               <form
                 onSubmit={handleSubscribe}
-                className="flex w-full max-w-md items-center gap-2"
+                className="flex w-full max-w-md flex-col gap-2 sm:flex-row sm:items-center"
                 aria-label="Newsletter subscription"
               >
                 <input
@@ -354,12 +354,12 @@ export function Footer() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Your email address"
-                  className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#18b9bb]/50 focus:ring-2 focus:ring-[#18b9bb]/20 transition"
+                  className="w-full min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/30 outline-none transition focus:border-[#18b9bb]/50 focus:ring-2 focus:ring-[#18b9bb]/20"
                   aria-label="Email address for newsletter"
                 />
                 <button
                   type="submit"
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#18b9bb] px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+                  className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#18b9bb] px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 sm:w-auto"
                 >
                   <Send className="h-3.5 w-3.5" />
                   Subscribe

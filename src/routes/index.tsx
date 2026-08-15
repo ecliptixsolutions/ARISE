@@ -325,7 +325,7 @@ function SynchronicsGuarantee() {
           THE SYNCHRONICS GUARANTEE
         </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 lg:grid-cols-6">
+        <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-8 min-[430px]:gap-x-4 md:grid-cols-3 lg:grid-cols-6">
           {guaranteeItems.map(({ title, subtitle, Icon, accent }) => (
             <div key={title} className="flex min-w-0 flex-col items-center text-center">
               <div className="grid h-12 w-12 place-items-center rounded-[14px] border border-white/10 bg-white/7 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
@@ -471,7 +471,7 @@ function PremiumHeroCarousel() {
         <div className="flex w-full max-w-[56rem] flex-col">
 
           {/* Eyebrow badge 1 */}
-          <div className="hi hi1 inline-flex w-fit items-center gap-2.5 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.2em] text-white backdrop-blur-sm sm:text-xs">
+          <div className="hi hi1 inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.2em] text-white backdrop-blur-sm sm:w-fit sm:gap-2.5 sm:px-4 sm:text-xs">
             <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#18b9bb]/20 ring-1 ring-[#18b9bb]/40">
               <span className="h-1.5 w-1.5 rounded-full bg-[#18b9bb]" />
             </span>
@@ -482,7 +482,7 @@ function PremiumHeroCarousel() {
           </div>
 
           {/* Eyebrow badge 2 */}
-          <div className="hi hi2 mt-3 inline-flex w-fit items-center gap-2.5 rounded-full border border-[#18b9bb]/28 bg-[#18b9bb]/14 px-4 py-2 text-[11px] font-semibold text-white/88 backdrop-blur-sm sm:text-xs">
+          <div className="hi hi2 mt-3 inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-full border border-[#18b9bb]/28 bg-[#18b9bb]/14 px-3 py-2 text-[11px] font-semibold text-white/88 backdrop-blur-sm sm:w-fit sm:gap-2.5 sm:px-4 sm:text-xs">
             <span className="h-2 w-2 rounded-full bg-[#18b9bb]" />
             <span>Trusted by Healthcare Facilities Since 2018</span>
             <span className="text-white/35">•</span>
@@ -507,16 +507,16 @@ function PremiumHeroCarousel() {
           </p>
 
           {/* CTA buttons */}
-          <div className="hi hi5 mt-8 flex flex-wrap items-center gap-3 sm:gap-4">
+          <div className="hi hi5 mt-8 flex flex-col items-stretch gap-3 min-[430px]:flex-row min-[430px]:flex-wrap min-[430px]:items-center sm:gap-4">
             <Link
               to={slide.primary.to}
-              className="inline-flex h-[52px] items-center gap-2.5 rounded-xl bg-[#18b9bb] px-6 text-[15px] font-bold text-white shadow-[0_16px_40px_rgba(24,185,187,0.35)] transition duration-250 hover:-translate-y-0.5 hover:brightness-110 sm:h-[56px] sm:px-7"
+              className="inline-flex h-[52px] min-w-0 items-center justify-center gap-2.5 rounded-xl bg-[#18b9bb] px-5 text-[15px] font-bold text-white shadow-[0_16px_40px_rgba(24,185,187,0.35)] transition duration-250 hover:-translate-y-0.5 hover:brightness-110 sm:h-[56px] sm:px-7"
             >
               {slide.primary.label} <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               to={slide.secondary.to}
-              className="inline-flex h-[52px] items-center rounded-xl border border-white/22 bg-white/8 px-6 text-[15px] font-bold text-white backdrop-blur transition duration-250 hover:-translate-y-0.5 hover:bg-white/14 sm:h-[56px] sm:px-7"
+              className="inline-flex h-[52px] min-w-0 items-center justify-center rounded-xl border border-white/22 bg-white/8 px-5 text-[15px] font-bold text-white backdrop-blur transition duration-250 hover:-translate-y-0.5 hover:bg-white/14 sm:h-[56px] sm:px-7"
             >
               {slide.secondary.label}
             </Link>

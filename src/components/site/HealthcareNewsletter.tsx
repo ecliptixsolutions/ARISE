@@ -59,11 +59,11 @@ export function HealthcareNewsletter() {
           {/* ── RIGHT — card ── */}
           <div className="rounded-[20px] border border-white/10 bg-[#0D2638] p-7 shadow-2xl md:p-9">
             {/* Card header */}
-            <div className="mb-6 flex items-center gap-3">
+            <div className="mb-6 flex min-w-0 items-center gap-3">
               <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#18b9bb]/15 ring-1 ring-[#18b9bb]/25">
                 <Mail className="h-5 w-5 text-[#18b9bb]" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="text-[16px] font-bold text-white">Get Healthcare Insights</div>
                 <div className="text-[13px] text-white/42">
                   Useful updates for healthcare professionals and facility teams.
@@ -105,9 +105,9 @@ export function HealthcareNewsletter() {
 
             {/* Divider + trust row */}
             <div className="mt-6 border-t border-white/8 pt-5">
-              <div className="flex items-center justify-center gap-6">
+              <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
                 {["Useful Updates", "Professional Insights", "No Spam"].map((t) => (
-                  <div key={t} className="flex items-center gap-1.5 text-[12px] text-white/32">
+                  <div key={t} className="flex min-w-0 items-center gap-1.5 text-[12px] text-white/32">
                     <CheckCircle2 className="h-3.5 w-3.5 text-[#18b9bb]/60" />
                     {t}
                   </div>
