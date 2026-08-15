@@ -21,6 +21,9 @@ import {
   Monitor,
   Battery,
   Settings,
+  Clock3,
+  Layers3,
+  Globe2,
 } from "lucide-react";
 import { Layout } from "@/components/site/Layout";
 import { WhatsAppIcon } from "@/components/site/WhatsAppIcon";
@@ -98,6 +101,9 @@ function Home() {
       {/* HERO */}
       <PremiumHeroCarousel />
 
+      {/* SYNCHRONICS GUARANTEE */}
+      <SynchronicsGuarantee />
+
       {/* BRANDS MARQUEE */}
       <BrandsMarquee />
 
@@ -118,29 +124,41 @@ function Home() {
       <RepairProcess />
 
       {/* INDUSTRIES */}
-      <section className="bg-surface">
-        <Section
-          eyebrow="Industries"
-          title="Who We Serve"
-          desc="Trusted by healthcare organisations of every size."
-        >
+      <section className="relative overflow-hidden bg-[#081E2D]">
+        <div className="pointer-events-none absolute inset-0" aria-hidden>
+          <div className="absolute left-1/4 top-1/4 h-[460px] w-[460px] -translate-x-1/2 rounded-full bg-[#18b9bb]/5 blur-[110px]" />
+          <div className="absolute bottom-0 right-1/4 h-[360px] w-[360px] rounded-full bg-[#c19e63]/5 blur-[100px]" />
+        </div>
+        <div className="relative container-x py-20 md:py-24">
+          <div className="mb-12 max-w-2xl">
+            <div className="mb-3 text-xs font-bold uppercase tracking-[0.28em] text-[#18b9bb]">
+              Industries
+            </div>
+            <h2 className="font-display text-[2.4rem] font-bold leading-[1.15] text-white sm:text-[2.75rem]">
+              Who We Serve
+            </h2>
+            <p className="mt-4 text-[17px] leading-[1.65] text-white/52">
+              Trusted by healthcare organisations of every size.
+            </p>
+          </div>
+
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {industries.slice(0, 9).map((i) => (
               <div
                 key={i.name}
-                className="flex gap-3 rounded-3xl border border-border bg-white p-5 shadow-sm"
+                className="group flex min-h-[132px] gap-4 rounded-[18px] border border-white/8 bg-white/4 p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#18b9bb]/25 hover:bg-white/7 hover:shadow-xl hover:shadow-[#18b9bb]/10"
               >
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px] border border-[#18b9bb]/25 bg-[#18b9bb]/10 text-[#18b9bb] transition-all duration-300 group-hover:bg-[#18b9bb]/16 group-hover:brightness-125">
                   <Building2 className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
-                  <div className="font-semibold text-navy">{i.name}</div>
-                  <p className="mt-1 text-sm text-foreground/70">{i.desc}</p>
+                  <h3 className="text-[17px] font-bold leading-snug text-white">{i.name}</h3>
+                  <p className="mt-2 text-[15px] leading-[1.65] text-white/48">{i.desc}</p>
                 </div>
               </div>
             ))}
           </div>
-        </Section>
+        </div>
       </section>
 
       {/* TESTIMONIALS */}
@@ -260,18 +278,83 @@ const numberPolicies = [
   "Pan-India Logistics",
 ];
 
+const guaranteeItems = [
+  {
+    title: "3-Month Warranty",
+    subtitle: "On every repair",
+    Icon: ShieldCheck,
+    accent: "text-[#18b9bb]",
+  },
+  {
+    title: "48–72 Hr Turnaround",
+    subtitle: "Fastest in India",
+    Icon: Clock3,
+    accent: "text-amber-400",
+  },
+  {
+    title: "No Fix, No Charge",
+    subtitle: "Zero risk to you",
+    Icon: Layers3,
+    accent: "text-emerald-400",
+  },
+  {
+    title: "OEM-Grade Parts Only",
+    subtitle: "No cheap substitutes",
+    Icon: Wrench,
+    accent: "text-blue-400",
+  },
+  {
+    title: "Free Diagnosis Report",
+    subtitle: "Always transparent",
+    Icon: Phone,
+    accent: "text-violet-400",
+  },
+  {
+    title: "Pan-India Service",
+    subtitle: "Ship from anywhere",
+    Icon: Globe2,
+    accent: "text-orange-400",
+  },
+] as const;
+
+function SynchronicsGuarantee() {
+  return (
+    <section className="bg-[#0D2B3D]">
+      <div className="container-x py-10 md:py-12">
+        <div className="text-center text-[11px] font-semibold uppercase tracking-[0.34em] text-white/58">
+          THE SYNCHRONICS GUARANTEE
+        </div>
+
+        <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 lg:grid-cols-6">
+          {guaranteeItems.map(({ title, subtitle, Icon, accent }) => (
+            <div key={title} className="flex min-w-0 flex-col items-center text-center">
+              <div className="grid h-12 w-12 place-items-center rounded-[14px] border border-white/10 bg-white/7 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                <Icon className={`h-5 w-5 ${accent}`} strokeWidth={2.4} />
+              </div>
+              <div className="mt-4 text-[14px] font-semibold leading-snug text-white">
+                {title}
+              </div>
+              <p className="mt-1 text-[12px] leading-snug text-white/54">{subtitle}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function NumbersSection() {
   return (
     <section className="bg-[#0b2233]">
-      <div className="container-x py-16 md:py-20">
+      <div className="container-x py-12 md:py-20">
         <div className="text-center text-xs font-bold uppercase tracking-[0.28em] text-white/55 md:text-sm">
           By the numbers - 8+ years of healthcare excellence
         </div>
-        <div className="mt-14 grid gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-8 md:mt-14 md:gap-y-10 lg:grid-cols-3 xl:grid-cols-6">
           {numberStats.map(({ value, label, detail, Icon }) => (
             <div
               key={label}
-              className="relative flex flex-col items-center px-4 text-center xl:[&:not(:last-child)]:border-r xl:[&:not(:last-child)]:border-white/10"
+              className="relative flex flex-col items-center px-4 text-center xl:px-8 xl:[&:not(:last-child)]:border-r xl:[&:not(:last-child)]:border-white/10"
             >
               <div className="grid h-14 w-14 place-items-center rounded-2xl border border-white/10 bg-white/7 text-cyan shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                 <Icon className="h-7 w-7" />
@@ -530,32 +613,5 @@ function Marquee({ items }: { items: string[] }) {
         ))}
       </div>
     </div>
-  );
-}
-
-function Section({
-  eyebrow,
-  title,
-  desc,
-  children,
-}: {
-  eyebrow?: string;
-  title: string;
-  desc?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="container-x py-16 md:py-20">
-      <div className="mb-10 max-w-2xl">
-        {eyebrow && (
-          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-            {eyebrow}
-          </div>
-        )}
-        <h2 className="font-display text-3xl font-bold text-navy md:text-4xl">{title}</h2>
-        {desc && <p className="mt-3 text-foreground/70">{desc}</p>}
-      </div>
-      {children}
-    </section>
   );
 }
