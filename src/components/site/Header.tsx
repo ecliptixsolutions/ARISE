@@ -91,7 +91,7 @@ const resourceItems = [
 ];
 
 /* ─── Search index ─────────────────────────────────────────── */
-type SearchEntry = { title: string; category: string; desc: string; to: string };
+type SearchEntry = { title: string; category: string; desc: string; to: string; search?: { q: string } };
 
 const searchIndex: SearchEntry[] = [
   // Services
@@ -106,7 +106,8 @@ const searchIndex: SearchEntry[] = [
     title: c,
     category: "Equipment",
     desc: `Medical equipment category: ${c}`,
-    to: `/equipments?q=${encodeURIComponent(c)}`,
+    to: "/equipments",
+    search: { q: c },
   })),
   // Brands
   ...[
@@ -389,7 +390,6 @@ export function Header() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dd, setDd]   = useState<DropKey | null>(null);
-  const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQ, setSearchQ] = useState("");
   const [searchFilter, setSearchFilter] = useState<string>("All");
@@ -398,7 +398,7 @@ export function Header() {
   const searchRef  = useRef<HTMLInputElement | null>(null);
 
   const isHome    = location.pathname === "/";
-  const isOverlay = isHome && !scrolled;
+  const isOverlay = isHome;
 
   /* Active parent detection */
   const activePath = location.pathname;
@@ -434,14 +434,6 @@ export function Header() {
       document.removeEventListener("keydown", onKey);
       cancelClose();
     };
-  }, []);
-
-  /* Scroll detection */
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 18);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   /* Close all on route change */
@@ -487,7 +479,7 @@ export function Header() {
             {/* Logo + brand name */}
             <Link to="/" className="flex min-w-0 flex-1 items-center gap-2 min-[1240px]:flex-none min-[1240px]:shrink-0 md:gap-3">
               <Logo size={78} className="header-logo transition-all duration-300" />
-              <div className="block min-w-0 max-w-[min(52vw,13rem)] text-[clamp(0.72rem,3.1vw,1.05rem)] font-bold leading-tight sm:max-w-none sm:text-[1.05rem] md:text-[1.2rem] xl:text-[1.3rem]">
+              <div className="brand-wordmark block min-w-0 max-w-[min(52vw,13rem)] text-[clamp(0.72rem,3.1vw,1.05rem)] leading-tight sm:max-w-none sm:text-[1.05rem] md:text-[1.2rem] xl:text-[1.3rem]">
                 <span className="text-[#138bd2]">Arise</span>{" "}
                 <span className="text-[#d6492f]">Healthcare Solutions</span>
               </div>
@@ -548,6 +540,7 @@ export function Header() {
                 onFocus={() => hoverOpen("equipments")}
                 onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) hoverClose(); }}>
                 <Link to="/equipments"
+                  onClick={(event) => { event.preventDefault(); clickToggle("equipments"); }}
                   className={itemCls(isEquipActive)}
                   aria-expanded={dd === "equipments"} aria-haspopup="menu">
                   Equipment <ChevronDown className="h-3.5 w-3.5" />
@@ -751,6 +744,7 @@ export function Header() {
                       <Link
                         key={`${r.to}-${i}`}
                         to={r.to}
+                        search={r.search as any}
                         onClick={() => { setSearchOpen(false); setSearchQ(""); }}
                         className="flex items-start justify-between gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-surface"
                       >
@@ -787,17 +781,20 @@ export function Header() {
 }
 
 /* ─── Mobile accordion item ────────────────────────────────── */
+type MobileChild = { to: string; label: string; search?: { q: string } };
+
 function MobileItem({ n, onClose }: { n: NavItem; onClose: () => void }) {
   const [expanded, setExpanded] = useState(false);
 
-  const children: { to: string; label: string }[] | null = (() => {
+  const children: MobileChild[] | null = (() => {
     if (n.dropdown === "about")
       return aboutItems.map((a) => ({ to: a.to, label: a.label }));
     if (n.dropdown === "services")
       return serviceHierarchy.map((s) => ({ to: `/services/${s.slug}`, label: s.label }));
     if (n.dropdown === "equipments")
       return equipmentCategories.map((c) => ({
-        to: `/equipments?q=${encodeURIComponent(c)}`,
+        to: "/equipments",
+        search: { q: c },
         label: c,
       }));
     if (n.dropdown === "resources")
@@ -834,14 +831,15 @@ function MobileItem({ n, onClose }: { n: NavItem; onClose: () => void }) {
       {expanded && children && (
         <div className="mb-2 ml-3 space-y-0.5 border-l-2 border-primary/20 pl-3">
           {children.map((c) => (
-            <a
+            <Link
               key={`${c.to}-${c.label}`}
-              href={c.to}
+              to={c.to}
+              search={c.search as any}
               onClick={onClose}
               className="block rounded-lg py-2 text-sm text-foreground/75 transition hover:text-primary"
             >
               {c.label}
-            </a>
+            </Link>
           ))}
         </div>
       )}

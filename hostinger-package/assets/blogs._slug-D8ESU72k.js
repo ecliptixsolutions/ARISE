@@ -1,0 +1,1 @@
+import{r as e}from"./client-BQ0CHpRP.js";import{n as t,t as n}from"./Layout-23n0cWZn.js";var r=e(),i=({error:e})=>(0,r.jsx)(n,{children:(0,r.jsx)(t,{title:`Error`,subtitle:e.message})});export{i as errorComponent};

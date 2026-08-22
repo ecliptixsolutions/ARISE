@@ -120,11 +120,9 @@ export function Footer() {
             <div className="mb-5 flex min-w-0 items-center gap-3">
               <Logo size={56} />
               <div className="min-w-0">
-                <div className="font-display text-base font-bold text-white leading-tight">
-                  Arise Healthcare
-                </div>
-                <div className="font-display text-base font-bold text-white leading-tight">
-                  Solutions
+                <div className="brand-wordmark font-display text-base leading-tight">
+                  <span className="text-[#138bd2]">Arise</span>{" "}
+                  <span className="text-[#d6492f]">Healthcare Solutions</span>
                 </div>
                 <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-[#18b9bb]">
                   Endoscopy Repair Specialists
@@ -196,9 +194,14 @@ export function Footer() {
 
             {/* Certification badges */}
             <div className="flex flex-wrap gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#18b9bb]">
-                <ShieldCheck className="h-3 w-3" /> MSME Registered
-              </span>
+              <div className="flex flex-col gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#18b9bb]">
+                  <ShieldCheck className="h-3 w-3" /> MSME Registered
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#18b9bb]">
+                  <ShieldCheck className="h-3 w-3" /> ISO Certified 9001:2015
+                </span>
+              </div>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white/40">
                 Est. 2018
               </span>
@@ -372,7 +375,7 @@ export function Footer() {
 
       {/* ══ COPYRIGHT BAR ═══════════════════════════════════ */}
       <div className="border-t border-white/6 bg-[#051525]">
-        <div className="container-x flex flex-col items-center justify-between gap-3 py-5 pb-24 text-center text-[12px] text-white/28 md:flex-row md:pb-5 md:text-left">
+        <div className="container-x flex flex-col items-center justify-between gap-3 py-5 pb-44 text-center text-[12px] text-white/28 md:flex-row md:pb-5 md:text-left">
           {/* Copyright */}
           <div>
             &copy; {new Date().getFullYear()} Arise Healthcare Solutions. All rights reserved.

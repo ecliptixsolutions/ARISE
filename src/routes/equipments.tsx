@@ -1,8 +1,15 @@
-import { createFileRoute, Link, Outlet, useLocation, useSearch } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useLocation,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import { Layout, PageHero } from "@/components/site/Layout";
 import { equipments, equipmentCategories } from "@/lib/site-data";
 import { Search, ArrowRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { z } from "zod";
 
 export const Route = createFileRoute("/equipments")({
@@ -25,23 +32,33 @@ export const Route = createFileRoute("/equipments")({
   component: Page,
 });
 
+const broadCategories = [
+  "Endoscopy",
+  "Imaging",
+  "Displays",
+  "Surgical",
+  "Diagnostics",
+  "Critical Care",
+];
+const categoryOptions = [...broadCategories, ...equipmentCategories];
+
 function Page() {
   const location = useLocation();
   const search = useSearch({ from: "/equipments" });
-  const [q, setQ] = useState(search.q ?? "");
-  const [cat, setCat] = useState<string>(
-    search.q && equipmentCategories.includes(search.q) ? search.q : "All",
-  );
+  const navigate = useNavigate({ from: "/equipments" });
+  const q = search.q ?? "";
+  const cat = q && categoryOptions.includes(q) ? q : "All";
+
+  const setQuery = (next: string, replace = false) => {
+    navigate({ search: next ? { q: next } : {}, replace });
+  };
 
   const filtered = useMemo(() => {
+    const term = q.trim().toLowerCase();
     return equipments.filter((e) => {
-      const matchQ =
-        !q || `${e.name} ${e.category} ${e.short}`.toLowerCase().includes(q.toLowerCase());
-      const matchCat =
-        cat === "All" || e.category === cat || e.name.toLowerCase().includes(cat.toLowerCase());
-      return matchQ && matchCat;
+      return !term || `${e.name} ${e.category} ${e.short}`.toLowerCase().includes(term);
     });
-  }, [q, cat]);
+  }, [q]);
 
   if (location.pathname !== "/equipments") return <Outlet />;
 
@@ -58,22 +75,20 @@ function Page() {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={q}
-              onChange={(e) => setQ(e.target.value)}
+              onChange={(e) => setQuery(e.target.value, true)}
               placeholder="Search equipment, category, brand..."
               className="w-full rounded-lg border border-border bg-card py-3 pl-10 pr-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/15"
             />
           </div>
           <select
             value={cat}
-            onChange={(e) => setCat(e.target.value)}
+            onChange={(e) => setQuery(e.target.value === "All" ? "" : e.target.value)}
             className="rounded-lg border border-border bg-card px-4 py-3 text-sm"
           >
             <option>All</option>
-            {["Endoscopy", "Imaging", "Displays", "Surgical", "Diagnostics", "Critical Care"].map(
-              (c) => (
-                <option key={c}>{c}</option>
-              ),
-            )}
+            {broadCategories.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
             {equipmentCategories.map((c) => (
               <option key={c} value={c}>
                 {c}

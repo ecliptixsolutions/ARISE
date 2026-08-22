@@ -1,23 +1,29 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { repairStatusLabels } from "@/lib/site-data";
-import { Wrench, MessageSquare, Clock, CheckCircle2, ExternalLink } from "lucide-react";
+import { Bell, Image, Server, Wrench, MessageSquare, Clock, CheckCircle2, ExternalLink, ShoppingCart } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: Page,
 });
 
 function Page() {
+  const qc = useQueryClient();
   const { data: stats } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {
-      const [repairs, enquiries] = await Promise.all([
+      const [repairs, enquiries, services, notifications, images, orders] = await Promise.all([
         supabase
           .from("repair_requests")
           .select("id,status,created_at")
           .order("created_at", { ascending: false }),
         supabase.from("enquiries").select("id,is_read"),
+        supabase.from("services").select("slug,is_published"),
+        (supabase as any).from("notifications").select("id,is_read"),
+        supabase.storage.from("admin-images").list("", { limit: 100 }),
+        (supabase as any).from("orders").select("id,status,created_at"),
       ]);
       const rows = repairs.data ?? [];
       const byStatus: Record<string, number> = {};
@@ -32,10 +38,27 @@ function Page() {
         byStatus,
         totalEnquiries: enquiries.data?.length ?? 0,
         unreadEnquiries: enquiries.data?.filter((e: any) => !e.is_read).length ?? 0,
+        activeServices: services.data?.filter((s: any) => s.is_published).length ?? 0,
+        unreadNotifications: notifications.data?.filter((n: any) => !n.is_read).length ?? 0,
+        totalImages: images.data?.length ?? 0,
+        totalOrders: orders.data?.length ?? 0,
+        pendingOrders: orders.data?.filter((o: any) => o.status === "pending").length ?? 0,
         recent: rows.slice(0, 8),
       };
     },
   });
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-dashboard-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "enquiries" }, () => qc.invalidateQueries({ queryKey: ["admin-stats"] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "repair_requests" }, () => qc.invalidateQueries({ queryKey: ["admin-stats"] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => qc.invalidateQueries({ queryKey: ["admin-stats"] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => qc.invalidateQueries({ queryKey: ["admin-stats"] }))
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [qc]);
 
   return (
     <div>
@@ -54,6 +77,10 @@ function Page() {
           value={stats?.totalEnquiries ?? "—"}
           sub={stats ? `${stats.unreadEnquiries} unread` : ""}
         />
+        <Stat icon={Server} label="Active services" value={stats?.activeServices ?? "—"} />
+        <Stat icon={Image} label="Uploaded images" value={stats?.totalImages ?? "—"} />
+        <Stat icon={Bell} label="Unread notifications" value={stats?.unreadNotifications ?? "—"} />
+        <Stat icon={ShoppingCart} label="Total orders" value={stats?.totalOrders ?? "—"} sub={stats ? `${stats.pendingOrders} pending` : ""} />
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
@@ -61,7 +88,7 @@ function Page() {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-display text-lg font-semibold text-navy">Recent repair requests</h2>
             <Link
-              to="/admin/repairs"
+              to="/admin/repair-requests"
               className="inline-flex items-center gap-1 text-sm font-semibold text-primary"
             >
               View all <ExternalLink className="h-3.5 w-3.5" />
@@ -74,7 +101,7 @@ function Page() {
             {stats?.recent.map((r: any) => (
               <Link
                 key={r.id}
-                to="/admin/repairs"
+                to="/admin/repair-requests"
                 className="flex items-center justify-between py-3 text-sm hover:bg-surface"
               >
                 <span className="font-mono text-xs text-navy">{r.id.slice(0, 8)}…</span>

@@ -164,7 +164,9 @@ function AvailabilityStatus() {
         aria-hidden
         className={`h-2 w-2 shrink-0 rounded-full ${status.open ? "bg-emerald-400" : "bg-gold-accent"}`}
       />
-      <span className="min-w-0">{status.text}</span>
+      <span className="min-w-0" suppressHydrationWarning>
+        {status.text}
+      </span>
     </span>
   );
 }
@@ -178,7 +180,7 @@ export function TopContactBar() {
       data-topbar
       className="top-contact-bar relative z-40 h-[var(--topbar-h)] w-full border-b border-white/10 bg-[#04111f] text-white/90"
     >
-      <div className="container-x grid h-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-1 md:flex md:justify-between md:gap-6 md:py-0">
+      <div className="container-x grid h-full grid-cols-[minmax(0,1fr)_minmax(5.5rem,auto)] items-center gap-3 py-1 md:flex md:justify-between md:gap-6 md:py-0">
         <div className="flex min-w-0 flex-col items-start gap-0.5 overflow-hidden md:flex-row md:items-center md:gap-4 md:overflow-visible">
           <a
             href={phoneHref(phone)}
@@ -201,7 +203,7 @@ export function TopContactBar() {
           </a>
         </div>
 
-        <div className="flex shrink-0 flex-col items-end gap-0.5 md:flex-row md:items-center md:gap-4">
+        <div className="flex min-w-0 shrink-0 flex-col items-end gap-0.5 md:flex-row md:items-center md:gap-4">
           <AvailabilityStatus />
 
           <span className="hidden h-3.5 w-px bg-white/15 md:block" aria-hidden />

@@ -188,12 +188,6 @@ export function WhyChooseArise() {
               >
                 Why Choose Arise <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link
-                to="/about"
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/12 bg-white/5 px-6 py-3.5 text-sm font-semibold text-white/80 transition-all duration-250 hover:bg-white/10 hover:border-white/20"
-              >
-                Our Story
-              </Link>
             </div>
 
             {/* Divider */}

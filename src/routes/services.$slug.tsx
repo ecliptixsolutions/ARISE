@@ -3,6 +3,7 @@ import { Layout } from "@/components/site/Layout";
 import { ServiceImageCarousel } from "@/components/site/ServiceImageCarousel";
 import { WhatsAppIcon } from "@/components/site/WhatsAppIcon";
 import { getPublicServiceBySlug, getPublicServices } from "@/lib/service-content";
+import { useServicesRealtime } from "@/hooks/useServicesRealtime";
 import {
   findServiceBySlug,
   getServiceCarouselImages,
@@ -121,6 +122,7 @@ export const Route = createFileRoute("/services/$slug")({
 });
 
 function Page() {
+  useServicesRealtime();
   const { service, allServices } = Route.useLoaderData();
   const images = getServiceCarouselImages(service);
   const requestSearch = { service: service.name } as any;

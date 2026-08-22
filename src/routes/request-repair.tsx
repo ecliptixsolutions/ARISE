@@ -77,13 +77,20 @@ function Page() {
       return;
     }
     setSubmitting(true);
-    const request_code = makeCode();
-    const { error } = await supabase
-      .from("repair_requests")
-      .insert({ request_code, ...parsed.data });
+    let request_code = makeCode();
+    let error: any = null;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      request_code = makeCode();
+      const result = await supabase
+        .from("repair_requests")
+        .insert({ request_code, ...parsed.data });
+      error = result.error;
+      if (!error || error.code !== "23505") break;
+    }
     setSubmitting(false);
     if (error) {
-      toast.error("Could not submit. Please try again.");
+      console.error("[Repair request submit failed]", error);
+      toast.error(import.meta.env.DEV ? error.message : "Could not submit. Please try again.");
       return;
     }
     setResult({ code: request_code });

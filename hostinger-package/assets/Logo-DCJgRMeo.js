@@ -1,0 +1,1 @@
+import{r as e}from"./client-BQ0CHpRP.js";var t=e();function n({size:e=56,className:n=``}){return(0,t.jsx)(`img`,{src:`/arise-logo.png`,alt:`Arise Healthcare Solutions`,height:e,className:`block shrink-0 object-contain ${n}`,style:{height:e,width:`auto`}})}export{n as t};

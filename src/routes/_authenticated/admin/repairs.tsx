@@ -2,15 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { repairStatusLabels } from "@/lib/site-data";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Search, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/repairs")({
-  component: Page,
+  component: RepairRequestsPage,
 });
 
-function Page() {
+export function RepairRequestsPage() {
   const [q, setQ] = useState("");
   const [statusF, setStatusF] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -20,6 +20,31 @@ function Page() {
     queryKey: ["admin-repairs"],
     queryFn: async () => (await supabase.from("repair_requests").select("*").order("created_at", { ascending: false })).data ?? [],
   });
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-repairs-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "repair_requests" }, (payload) => {
+        qc.setQueryData(["admin-repairs"], (current: any[] = []) => {
+          if (payload.eventType === "DELETE") {
+            return current.filter((row) => row.id !== (payload.old as any).id);
+          }
+
+          const next = payload.new as any;
+          const rows = current.filter((row) => row.id !== next.id);
+          return [next, ...rows].sort(
+            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+          );
+        });
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          qc.invalidateQueries({ queryKey: ["admin-repairs"] });
+        }
+      });
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [qc]);
 
   const filtered = data.filter((r: any) => {
     const okQ = !q || `${r.request_code} ${r.full_name} ${r.equipment_name} ${r.mobile} ${r.email}`.toLowerCase().includes(q.toLowerCase());

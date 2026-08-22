@@ -37,14 +37,23 @@ import { Route as TrackRepairRouteImport } from './routes/track-repair'
 import { Route as WarrantyRouteImport } from './routes/warranty'
 import { Route as WarrantyAndServiceRouteImport } from './routes/warranty-and-service'
 import { Route as WhyUsRouteImport } from './routes/why-us'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as BlogsSlugRouteImport } from './routes/blogs.$slug'
 import { Route as EquipmentsSlugRouteImport } from './routes/equipments.$slug'
 import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedAdminEnquiriesRouteImport } from './routes/_authenticated/admin/enquiries'
+import { Route as AuthenticatedAdminImagesRouteImport } from './routes/_authenticated/admin/images'
+import { Route as AuthenticatedAdminNotificationsRouteImport } from './routes/_authenticated/admin/notifications'
+import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenticated/admin/orders'
+import { Route as AuthenticatedAdminRepairRequestsRouteImport } from './routes/_authenticated/admin/repair-requests'
 import { Route as AuthenticatedAdminRepairsRouteImport } from './routes/_authenticated/admin/repairs'
+import { Route as AuthenticatedAdminRequestsRouteImport } from './routes/_authenticated/admin/requests'
 import { Route as AuthenticatedAdminServicesRouteImport } from './routes/_authenticated/admin/services'
+import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminTestimonialsRouteImport } from './routes/_authenticated/admin/testimonials'
+import { Route as AuthenticatedAdminTrackingRouteImport } from './routes/_authenticated/admin/tracking'
+import { Route as AuthenticatedAdminOrdersOrderIdRouteImport } from './routes/_authenticated/admin/orders.$orderId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -185,6 +194,11 @@ const WhyUsRoute = WhyUsRouteImport.update({
   path: '/why-us',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BlogsSlugRoute = BlogsSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -211,10 +225,40 @@ const AuthenticatedAdminEnquiriesRoute =
     path: '/admin/enquiries',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminImagesRoute =
+  AuthenticatedAdminImagesRouteImport.update({
+    id: '/admin/images',
+    path: '/admin/images',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminNotificationsRoute =
+  AuthenticatedAdminNotificationsRouteImport.update({
+    id: '/admin/notifications',
+    path: '/admin/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminOrdersRoute =
+  AuthenticatedAdminOrdersRouteImport.update({
+    id: '/admin/orders',
+    path: '/admin/orders',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminRepairRequestsRoute =
+  AuthenticatedAdminRepairRequestsRouteImport.update({
+    id: '/admin/repair-requests',
+    path: '/admin/repair-requests',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminRepairsRoute =
   AuthenticatedAdminRepairsRouteImport.update({
     id: '/admin/repairs',
     path: '/admin/repairs',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminRequestsRoute =
+  AuthenticatedAdminRequestsRouteImport.update({
+    id: '/admin/requests',
+    path: '/admin/requests',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminServicesRoute =
@@ -223,11 +267,29 @@ const AuthenticatedAdminServicesRoute =
     path: '/admin/services',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminSettingsRoute =
+  AuthenticatedAdminSettingsRouteImport.update({
+    id: '/admin/settings',
+    path: '/admin/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminTestimonialsRoute =
   AuthenticatedAdminTestimonialsRouteImport.update({
     id: '/admin/testimonials',
     path: '/admin/testimonials',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTrackingRoute =
+  AuthenticatedAdminTrackingRouteImport.update({
+    id: '/admin/tracking',
+    path: '/admin/tracking',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminOrdersOrderIdRoute =
+  AuthenticatedAdminOrdersOrderIdRouteImport.update({
+    id: '/$orderId',
+    path: '/$orderId',
+    getParentRoute: () => AuthenticatedAdminOrdersRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -258,14 +320,23 @@ export interface FileRoutesByFullPath {
   '/warranty': typeof WarrantyRoute
   '/warranty-and-service': typeof WarrantyAndServiceRoute
   '/why-us': typeof WhyUsRoute
+  '/admin/login': typeof AdminLoginRoute
   '/blogs/$slug': typeof BlogsSlugRoute
   '/equipments/$slug': typeof EquipmentsSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
   '/admin/enquiries': typeof AuthenticatedAdminEnquiriesRoute
+  '/admin/images': typeof AuthenticatedAdminImagesRoute
+  '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
+  '/admin/orders': typeof AuthenticatedAdminOrdersRouteWithChildren
+  '/admin/repair-requests': typeof AuthenticatedAdminRepairRequestsRoute
   '/admin/repairs': typeof AuthenticatedAdminRepairsRoute
+  '/admin/requests': typeof AuthenticatedAdminRequestsRoute
   '/admin/services': typeof AuthenticatedAdminServicesRoute
+  '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/testimonials': typeof AuthenticatedAdminTestimonialsRoute
+  '/admin/tracking': typeof AuthenticatedAdminTrackingRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/admin/orders/$orderId': typeof AuthenticatedAdminOrdersOrderIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -295,14 +366,23 @@ export interface FileRoutesByTo {
   '/warranty': typeof WarrantyRoute
   '/warranty-and-service': typeof WarrantyAndServiceRoute
   '/why-us': typeof WhyUsRoute
+  '/admin/login': typeof AdminLoginRoute
   '/blogs/$slug': typeof BlogsSlugRoute
   '/equipments/$slug': typeof EquipmentsSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
   '/admin/enquiries': typeof AuthenticatedAdminEnquiriesRoute
+  '/admin/images': typeof AuthenticatedAdminImagesRoute
+  '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
+  '/admin/orders': typeof AuthenticatedAdminOrdersRouteWithChildren
+  '/admin/repair-requests': typeof AuthenticatedAdminRepairRequestsRoute
   '/admin/repairs': typeof AuthenticatedAdminRepairsRoute
+  '/admin/requests': typeof AuthenticatedAdminRequestsRoute
   '/admin/services': typeof AuthenticatedAdminServicesRoute
+  '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/testimonials': typeof AuthenticatedAdminTestimonialsRoute
+  '/admin/tracking': typeof AuthenticatedAdminTrackingRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/admin/orders/$orderId': typeof AuthenticatedAdminOrdersOrderIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -334,14 +414,23 @@ export interface FileRoutesById {
   '/warranty': typeof WarrantyRoute
   '/warranty-and-service': typeof WarrantyAndServiceRoute
   '/why-us': typeof WhyUsRoute
+  '/admin/login': typeof AdminLoginRoute
   '/blogs/$slug': typeof BlogsSlugRoute
   '/equipments/$slug': typeof EquipmentsSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
   '/_authenticated/admin/enquiries': typeof AuthenticatedAdminEnquiriesRoute
+  '/_authenticated/admin/images': typeof AuthenticatedAdminImagesRoute
+  '/_authenticated/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
+  '/_authenticated/admin/orders': typeof AuthenticatedAdminOrdersRouteWithChildren
+  '/_authenticated/admin/repair-requests': typeof AuthenticatedAdminRepairRequestsRoute
   '/_authenticated/admin/repairs': typeof AuthenticatedAdminRepairsRoute
+  '/_authenticated/admin/requests': typeof AuthenticatedAdminRequestsRoute
   '/_authenticated/admin/services': typeof AuthenticatedAdminServicesRoute
+  '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/testimonials': typeof AuthenticatedAdminTestimonialsRoute
+  '/_authenticated/admin/tracking': typeof AuthenticatedAdminTrackingRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/admin/orders/$orderId': typeof AuthenticatedAdminOrdersOrderIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -373,14 +462,23 @@ export interface FileRouteTypes {
     | '/warranty'
     | '/warranty-and-service'
     | '/why-us'
+    | '/admin/login'
     | '/blogs/$slug'
     | '/equipments/$slug'
     | '/services/$slug'
     | '/admin/enquiries'
+    | '/admin/images'
+    | '/admin/notifications'
+    | '/admin/orders'
+    | '/admin/repair-requests'
     | '/admin/repairs'
+    | '/admin/requests'
     | '/admin/services'
+    | '/admin/settings'
     | '/admin/testimonials'
+    | '/admin/tracking'
     | '/admin/'
+    | '/admin/orders/$orderId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -410,14 +508,23 @@ export interface FileRouteTypes {
     | '/warranty'
     | '/warranty-and-service'
     | '/why-us'
+    | '/admin/login'
     | '/blogs/$slug'
     | '/equipments/$slug'
     | '/services/$slug'
     | '/admin/enquiries'
+    | '/admin/images'
+    | '/admin/notifications'
+    | '/admin/orders'
+    | '/admin/repair-requests'
     | '/admin/repairs'
+    | '/admin/requests'
     | '/admin/services'
+    | '/admin/settings'
     | '/admin/testimonials'
+    | '/admin/tracking'
     | '/admin'
+    | '/admin/orders/$orderId'
   id:
     | '__root__'
     | '/'
@@ -448,14 +555,23 @@ export interface FileRouteTypes {
     | '/warranty'
     | '/warranty-and-service'
     | '/why-us'
+    | '/admin/login'
     | '/blogs/$slug'
     | '/equipments/$slug'
     | '/services/$slug'
     | '/_authenticated/admin/enquiries'
+    | '/_authenticated/admin/images'
+    | '/_authenticated/admin/notifications'
+    | '/_authenticated/admin/orders'
+    | '/_authenticated/admin/repair-requests'
     | '/_authenticated/admin/repairs'
+    | '/_authenticated/admin/requests'
     | '/_authenticated/admin/services'
+    | '/_authenticated/admin/settings'
     | '/_authenticated/admin/testimonials'
+    | '/_authenticated/admin/tracking'
     | '/_authenticated/admin/'
+    | '/_authenticated/admin/orders/$orderId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -487,6 +603,7 @@ export interface RootRouteChildren {
   WarrantyRoute: typeof WarrantyRoute
   WarrantyAndServiceRoute: typeof WarrantyAndServiceRoute
   WhyUsRoute: typeof WhyUsRoute
+  AdminLoginRoute: typeof AdminLoginRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -687,6 +804,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WhyUsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/blogs/$slug': {
       id: '/blogs/$slug'
       path: '/$slug'
@@ -722,11 +846,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEnquiriesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/images': {
+      id: '/_authenticated/admin/images'
+      path: '/admin/images'
+      fullPath: '/admin/images'
+      preLoaderRoute: typeof AuthenticatedAdminImagesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/notifications': {
+      id: '/_authenticated/admin/notifications'
+      path: '/admin/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AuthenticatedAdminNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/orders': {
+      id: '/_authenticated/admin/orders'
+      path: '/admin/orders'
+      fullPath: '/admin/orders'
+      preLoaderRoute: typeof AuthenticatedAdminOrdersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/repair-requests': {
+      id: '/_authenticated/admin/repair-requests'
+      path: '/admin/repair-requests'
+      fullPath: '/admin/repair-requests'
+      preLoaderRoute: typeof AuthenticatedAdminRepairRequestsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/repairs': {
       id: '/_authenticated/admin/repairs'
       path: '/admin/repairs'
       fullPath: '/admin/repairs'
       preLoaderRoute: typeof AuthenticatedAdminRepairsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/requests': {
+      id: '/_authenticated/admin/requests'
+      path: '/admin/requests'
+      fullPath: '/admin/requests'
+      preLoaderRoute: typeof AuthenticatedAdminRequestsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/services': {
@@ -736,6 +895,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminServicesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/settings': {
+      id: '/_authenticated/admin/settings'
+      path: '/admin/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AuthenticatedAdminSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/testimonials': {
       id: '/_authenticated/admin/testimonials'
       path: '/admin/testimonials'
@@ -743,22 +909,64 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminTestimonialsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/tracking': {
+      id: '/_authenticated/admin/tracking'
+      path: '/admin/tracking'
+      fullPath: '/admin/tracking'
+      preLoaderRoute: typeof AuthenticatedAdminTrackingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/orders/$orderId': {
+      id: '/_authenticated/admin/orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/admin/orders/$orderId'
+      preLoaderRoute: typeof AuthenticatedAdminOrdersOrderIdRouteImport
+      parentRoute: typeof AuthenticatedAdminOrdersRoute
+    }
   }
 }
 
+interface AuthenticatedAdminOrdersRouteChildren {
+  AuthenticatedAdminOrdersOrderIdRoute: typeof AuthenticatedAdminOrdersOrderIdRoute
+}
+
+const AuthenticatedAdminOrdersRouteChildren: AuthenticatedAdminOrdersRouteChildren =
+  {
+    AuthenticatedAdminOrdersOrderIdRoute: AuthenticatedAdminOrdersOrderIdRoute,
+  }
+
+const AuthenticatedAdminOrdersRouteWithChildren =
+  AuthenticatedAdminOrdersRoute._addFileChildren(
+    AuthenticatedAdminOrdersRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminEnquiriesRoute: typeof AuthenticatedAdminEnquiriesRoute
+  AuthenticatedAdminImagesRoute: typeof AuthenticatedAdminImagesRoute
+  AuthenticatedAdminNotificationsRoute: typeof AuthenticatedAdminNotificationsRoute
+  AuthenticatedAdminOrdersRoute: typeof AuthenticatedAdminOrdersRouteWithChildren
+  AuthenticatedAdminRepairRequestsRoute: typeof AuthenticatedAdminRepairRequestsRoute
   AuthenticatedAdminRepairsRoute: typeof AuthenticatedAdminRepairsRoute
+  AuthenticatedAdminRequestsRoute: typeof AuthenticatedAdminRequestsRoute
   AuthenticatedAdminServicesRoute: typeof AuthenticatedAdminServicesRoute
+  AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminTestimonialsRoute: typeof AuthenticatedAdminTestimonialsRoute
+  AuthenticatedAdminTrackingRoute: typeof AuthenticatedAdminTrackingRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminEnquiriesRoute: AuthenticatedAdminEnquiriesRoute,
+  AuthenticatedAdminImagesRoute: AuthenticatedAdminImagesRoute,
+  AuthenticatedAdminNotificationsRoute: AuthenticatedAdminNotificationsRoute,
+  AuthenticatedAdminOrdersRoute: AuthenticatedAdminOrdersRouteWithChildren,
+  AuthenticatedAdminRepairRequestsRoute: AuthenticatedAdminRepairRequestsRoute,
   AuthenticatedAdminRepairsRoute: AuthenticatedAdminRepairsRoute,
+  AuthenticatedAdminRequestsRoute: AuthenticatedAdminRequestsRoute,
   AuthenticatedAdminServicesRoute: AuthenticatedAdminServicesRoute,
+  AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
   AuthenticatedAdminTestimonialsRoute: AuthenticatedAdminTestimonialsRoute,
+  AuthenticatedAdminTrackingRoute: AuthenticatedAdminTrackingRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
@@ -828,6 +1036,7 @@ const rootRouteChildren: RootRouteChildren = {
   WarrantyRoute: WarrantyRoute,
   WarrantyAndServiceRoute: WarrantyAndServiceRoute,
   WhyUsRoute: WhyUsRoute,
+  AdminLoginRoute: AdminLoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

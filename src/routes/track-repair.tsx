@@ -47,15 +47,26 @@ function Page() {
       _code: code.trim(),
       _contact: contact.trim(),
     });
-    const { data: hRows } = await supabase.rpc("track_repair_history", {
-      _code: code.trim(),
-      _contact: contact.trim(),
-    });
-    setLoading(false);
-    if (error || !rows || rows.length === 0) {
+    if (error) {
+      setLoading(false);
+      console.error("[Track repair lookup failed]", error);
+      toast.error("Unable to check your request right now. Please try again.");
+      return;
+    }
+    if (!rows || rows.length === 0) {
+      setLoading(false);
       toast.error("No matching request. Check your details.");
       return;
     }
+    const { data: hRows, error: hError } = await supabase.rpc("track_repair_history", {
+      _code: code.trim(),
+      _contact: contact.trim(),
+    });
+    if (hError) {
+      console.error("[Track repair history failed]", hError);
+      toast.error("Unable to load the status timeline right now.");
+    }
+    setLoading(false);
     setData(rows[0]);
     setHistory(hRows ?? []);
   }

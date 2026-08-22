@@ -1,0 +1,1 @@
+var e=`/assets/lab-solder-D5YZQu4P.jpg`;export{e as t};

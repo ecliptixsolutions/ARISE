@@ -1,0 +1,3 @@
+import{r as e}from"./client-BQ0CHpRP.js";import{n as t,t as n}from"./Layout-23n0cWZn.js";import{r}from"./index-DFJBmh50.js";var i=e(),a=()=>{let e=r.useLoaderData();return(0,i.jsxs)(n,{children:[(0,i.jsx)(t,{eyebrow:e.category,title:e.title}),(0,i.jsx)(`article`,{className:`container-x mx-auto max-w-3xl py-14 text-foreground/80`,children:e.body.split(`
+
+`).map((e,t)=>(0,i.jsx)(`p`,{className:`mt-4 leading-relaxed`,children:e},t))})]})};export{a as component};

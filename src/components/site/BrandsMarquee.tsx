@@ -15,7 +15,7 @@ const row1 = [
   "SCHÖLLY",
   "RZ Medizintechnik",
   "Ackermann",
-  "Smith+Nephew",
+  "Smith & Nephew",
   "Arthrex",
   "Ambu",
 ];
@@ -77,7 +77,7 @@ function MarqueeRow({
       <div
         className="flex"
         style={{
-          animation: `${reverse ? "marquee-right" : "marquee-left"} ${brands.length * 3}s linear infinite`,
+          animation: `${reverse ? "marquee-right" : "marquee-left"} ${brands.length * 1.8}s linear infinite`,
           animationPlayState: paused ? "paused" : "running",
           width: "max-content",
         }}

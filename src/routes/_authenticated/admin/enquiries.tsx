@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/_authenticated/admin/enquiries")({
   component: Page,
@@ -13,6 +14,31 @@ function Page() {
     queryKey: ["admin-enquiries"],
     queryFn: async () => (await supabase.from("enquiries").select("*").order("created_at", { ascending: false })).data ?? [],
   });
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-enquiries-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "enquiries" }, (payload) => {
+        qc.setQueryData(["admin-enquiries"], (current: any[] = []) => {
+          if (payload.eventType === "DELETE") {
+            return current.filter((row) => row.id !== (payload.old as any).id);
+          }
+
+          const next = payload.new as any;
+          const rows = current.filter((row) => row.id !== next.id);
+          return [next, ...rows].sort(
+            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+          );
+        });
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          qc.invalidateQueries({ queryKey: ["admin-enquiries"] });
+        }
+      });
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [qc]);
   async function toggleRead(id: string, is_read: boolean) {
     const { error } = await supabase.from("enquiries").update({ is_read: !is_read }).eq("id", id);
     if (error) { toast.error("Failed"); return; }

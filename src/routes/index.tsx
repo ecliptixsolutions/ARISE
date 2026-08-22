@@ -50,6 +50,7 @@ import { HealthcareCTA } from "@/components/site/HealthcareCTA";
 import { ServicesSection } from "@/components/site/ServicesSection";
 import labImg from "@/assets/lab-solder.jpg";
 import heroRepairImg from "@/assets/hero-repair.jpg";
+import heroEndoscopySlideImg from "@/assets/hero-endoscopy-slide.png";
 import servicePcbImg from "@/assets/service-pcb-diagnosis.jpg";
 import serviceMicroscopeImg from "@/assets/service-microscope-repair.jpg";
 import serviceMedicalImg from "@/assets/service-medical-equipment.jpg";
@@ -57,7 +58,7 @@ import serviceLabTestingImg from "@/assets/service-lab-testing.jpg";
 import serviceOpticalImg from "@/assets/service-optical-inspection.jpg";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -90,6 +91,7 @@ function Home() {
         .from("testimonials")
         .select("*")
         .eq("is_approved", true)
+        .eq("is_sample", false)
         .order("sort_order")
         .limit(6);
       return data ?? [];
@@ -231,6 +233,17 @@ const heroSlides = [
   },
 ];
 
+const heroBackgroundImages = [heroRepairImg, heroEndoscopySlideImg];
+
+const heroBrands = [
+  "Richard Wolf",
+  "Olympus",
+  "Smith & Nephew",
+  "Arthrex",
+  "Karl Storz",
+  "Stryker",
+];
+
 const numberStats = [
   {
     value: "8+",
@@ -322,7 +335,7 @@ function SynchronicsGuarantee() {
     <section className="bg-[#0D2B3D]">
       <div className="container-x py-10 md:py-12">
         <div className="text-center text-[11px] font-semibold uppercase tracking-[0.34em] text-white/58">
-          THE SYNCHRONICS GUARANTEE
+          ARISE HEALTHCARE SOLUTIONS GUARANTEE
         </div>
 
         <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-8 min-[430px]:gap-x-4 md:grid-cols-3 lg:grid-cols-6">
@@ -343,9 +356,73 @@ function SynchronicsGuarantee() {
   );
 }
 
+function formatStatValue(
+  num: number,
+  suffix: string,
+  decimals: number,
+) {
+  if (num === 0) return `0${suffix}`;
+  const displayed = decimals ? num.toFixed(decimals) : Math.round(num).toString();
+  const [whole, decimal] = displayed.split(".");
+  return `${Number(whole).toLocaleString("en-US")}${decimal ? `.${decimal}` : ""}${suffix}`;
+}
+
+function AnimatedStatValue({ value, start }: { value: string; start: boolean }) {
+  const stat = useMemo(() => {
+    const match = value.match(/^([\d,]+(?:\.\d+)?)(.*)$/);
+    return {
+      parsed: Boolean(match),
+      target: match ? Number(match[1].replace(/,/g, "")) : 0,
+      suffix: match?.[2] ?? "",
+      decimals: match?.[1].includes(".") ? match[1].split(".")[1].length : 0,
+    };
+  }, [value]);
+  const [display, setDisplay] = useState(() => formatStatValue(0, stat.suffix, stat.decimals));
+
+  useEffect(() => {
+    if (!start || !stat.parsed) return;
+    let frame = 0;
+    const duration = 1400;
+    const startedAt = performance.now();
+    const tick = (now: number) => {
+      const progress = Math.min((now - startedAt) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(
+        progress === 1
+          ? value
+          : formatStatValue(stat.target * eased, stat.suffix, stat.decimals),
+      );
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [start, stat, value]);
+
+  return <>{display}</>;
+}
+
 function NumbersSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.2 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section className="bg-[#0b2233]">
+    <section ref={sectionRef} className="bg-[#0b2233]">
       <div className="container-x py-12 md:py-20">
         <div className="text-center text-xs font-bold uppercase tracking-[0.28em] text-white/55 md:text-sm">
           By the numbers - 8+ years of healthcare excellence
@@ -360,7 +437,7 @@ function NumbersSection() {
                 <Icon className="h-7 w-7" />
               </div>
               <div className="mt-6 text-5xl font-extrabold leading-none tracking-[0.02em] text-[#18b9bb] md:text-[3.4rem]">
-                {value}
+                <AnimatedStatValue value={value} start={visible} />
               </div>
               <div className="mt-2 text-base font-bold text-white/88">{label}</div>
               <div className="text-sm text-white/55">{detail}</div>
@@ -389,28 +466,27 @@ function NumbersSection() {
 }
 
 function PremiumHeroCarousel() {
-  const [active, setActive] = useState(0);
+  const [activeBrand, setActiveBrand] = useState(0);
   const [paused, setPaused] = useState(false);
   const touchStart = useRef<number | null>(null);
-  const slideDuration = 5500;
+  const slideDuration = 2400;
 
   const goTo = (index: number) => {
-    setActive((index + heroSlides.length) % heroSlides.length);
+    setActiveBrand((index + heroBrands.length) % heroBrands.length);
   };
 
   useEffect(() => {
     if (paused) return;
-    const timer = window.setInterval(() => goTo(active + 1), slideDuration);
+    const timer = window.setInterval(() => goTo(activeBrand + 1), slideDuration);
     return () => window.clearInterval(timer);
-  }, [active, paused]);
+  }, [activeBrand, paused]);
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
-    if (event.key === "ArrowRight") goTo(active + 1);
-    if (event.key === "ArrowLeft") goTo(active - 1);
+    if (event.key === "ArrowRight") goTo(activeBrand + 1);
+    if (event.key === "ArrowLeft") goTo(activeBrand - 1);
   };
 
-  /* Single source of truth — active controls everything */
-  const slide = heroSlides[active];
+  const slide = heroSlides[0];
 
   return (
     <section
@@ -425,7 +501,7 @@ function PremiumHeroCarousel() {
         const start = touchStart.current;
         const end = e.changedTouches[0]?.clientX;
         if (start !== null && end !== undefined && Math.abs(start - end) > 42)
-          goTo(start > end ? active + 1 : active - 1);
+          goTo(start > end ? activeBrand + 1 : activeBrand - 1);
         touchStart.current = null;
         setPaused(false);
       }}
@@ -442,29 +518,38 @@ function PremiumHeroCarousel() {
         .hi4 { animation-delay:0.36s; }
         .hi5 { animation-delay:0.46s; }
         .hi6 { animation-delay:0.54s; }
+        @keyframes hero-bg-slide {
+          0%, 42% { transform: translateX(0); }
+          50%, 92% { transform: translateX(-50%); }
+          100% { transform: translateX(0); }
+        }
       `}</style>
 
-      {/* ── Background images (all mounted, crossfade) ── */}
-      {heroSlides.map((s, i) => (
-        <img
-          key={i}
-          src={s.image}
-          alt=""
-          loading={i === 0 ? "eager" : "lazy"}
-          decoding="async"
-          aria-hidden
-          className={`absolute inset-0 -z-20 h-full w-full object-cover transition-opacity duration-700 ease-out ${i === active ? "opacity-100" : "opacity-0"}`}
-        />
-      ))}
+      {/* ── Background images ── */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-20 flex h-full w-[200%]"
+        style={{ animation: "hero-bg-slide 10s cubic-bezier(.4,0,.2,1) infinite" }}
+      >
+        {heroBackgroundImages.map((image) => (
+          <img
+            key={image}
+            src={image}
+            alt=""
+            loading="eager"
+            decoding="async"
+            className="h-full w-1/2 shrink-0 object-cover"
+          />
+        ))}
+      </div>
 
       {/* ── Dark gradient overlays ── */}
       <div aria-hidden className="absolute inset-0 -z-10 bg-[linear-gradient(100deg,rgba(4,17,31,0.97)_0%,rgba(7,30,48,0.88)_40%,rgba(10,55,70,0.52)_66%,rgba(4,17,31,0.14)_100%)]" />
       <div aria-hidden className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(4,17,31,0.22)_0%,transparent_45%,rgba(4,17,31,0.60)_100%)]" />
       <div aria-hidden className="absolute left-[5%] top-10 -z-10 h-64 w-64 rounded-full bg-cyan/10 blur-[80px]" />
 
-      {/* ── Slide content — keyed on active so React fully remounts ── */}
+      {/* ── Slide content ── */}
       <div
-        key={active}
         aria-live="polite"
         className="relative flex min-h-[700px] w-full items-center px-5 pb-24 pt-[9rem] sm:min-h-[680px] sm:px-10 sm:pt-[11rem] md:min-h-[720px] md:px-16 md:pt-[11rem] lg:px-[8vw]"
       >
@@ -472,7 +557,7 @@ function PremiumHeroCarousel() {
 
           {/* Eyebrow badge 1 */}
           <div className="hi hi1 inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.2em] text-white backdrop-blur-sm sm:w-fit sm:gap-2.5 sm:px-4 sm:text-xs">
-            <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#18b9bb]/20 ring-1 ring-[#18b9bb]/40">
+            <span className="hidden h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#18b9bb]/20 ring-1 ring-[#18b9bb]/40 sm:flex">
               <span className="h-1.5 w-1.5 rounded-full bg-[#18b9bb]" />
             </span>
             India's Trusted&nbsp;
@@ -496,8 +581,18 @@ function PremiumHeroCarousel() {
               <br />
               Solutions For
             </h1>
-            <p className="mt-1 text-[clamp(2.6rem,5.8vw,5.6rem)] font-extrabold leading-[1.0] tracking-[-0.03em] text-[#18b9bb]">
-              {slide.brand}
+            <p className="relative mt-1 h-[1em] w-full max-w-none overflow-hidden text-[clamp(2rem,9.4vw,5.6rem)] font-extrabold leading-[1.0] tracking-[-0.03em] text-[#18b9bb] md:max-w-[14ch] md:text-[clamp(2.6rem,5.8vw,5.6rem)]">
+              {heroBrands.map((brand, i) => (
+                <span
+                  key={brand}
+                  aria-hidden={i !== activeBrand}
+                  className={`absolute left-0 top-0 whitespace-nowrap transition-all duration-500 ease-out ${
+                    i === activeBrand ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
+                  }`}
+                >
+                  {brand}
+                </span>
+              ))}
             </p>
           </div>
 
@@ -546,14 +641,14 @@ function PremiumHeroCarousel() {
         </div>
 
         {/* ── Slide dot indicators ── */}
-        <div className="absolute bottom-8 left-5 flex items-center gap-2 sm:left-10 md:left-16 lg:left-[8vw]">
+        <div className="absolute bottom-8 left-5 hidden items-center gap-2 sm:left-10 md:left-16 md:flex lg:left-[8vw]">
           {heroSlides.map((_, i) => (
             <button
               key={i}
               onClick={() => { goTo(i); setPaused(true); }}
               aria-label={`Go to slide ${i + 1}`}
               className={`rounded-full transition-all duration-300 ${
-                i === active
+                i === 0
                   ? "h-2 w-8 bg-[#18b9bb]"
                   : "h-2 w-2 bg-white/30 hover:bg-white/55"
               }`}

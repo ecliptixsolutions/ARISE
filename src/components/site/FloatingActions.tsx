@@ -311,7 +311,7 @@ export function FloatingActions() {
   };
 
   return (
-    <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] right-3 z-[60] flex flex-col items-end gap-3 sm:bottom-[calc(1.25rem+env(safe-area-inset-bottom))] sm:right-5">
+    <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-3 z-[60] flex max-w-[calc(100vw-1.5rem)] flex-col items-end gap-3 sm:bottom-[calc(1.25rem+env(safe-area-inset-bottom))] sm:right-5">
       {chatOpen && (
         <div className="flex max-h-[calc(100dvh-8.5rem)] w-[calc(100vw-24px)] animate-in flex-col overflow-hidden rounded-[24px] border border-white/70 bg-white shadow-2xl shadow-primary/25 duration-200 fade-in slide-in-from-bottom-4 sm:max-h-none sm:w-[390px]">
           <div className="flex items-center justify-between bg-[linear-gradient(135deg,#071C2C,#138bd2_58%,#18b9bb)] px-4 py-3.5 text-white">

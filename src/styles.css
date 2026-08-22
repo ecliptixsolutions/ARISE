@@ -362,6 +362,12 @@
   box-shadow: 0 14px 28px rgba(33, 142, 175, 0.24);
 }
 
+.brand-wordmark {
+  font-family: Georgia, Cambria, "Times New Roman", serif;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
 header .font-display.text-base {
   font-size: var(--text-readable-base) !important;
 }
@@ -708,8 +714,8 @@ html {
 
   .home-hero article {
     align-items: flex-start !important;
-    padding-top: calc(6.5rem + var(--topbar-h, 0px)) !important;
-    padding-bottom: 6.5rem !important;
+    padding-top: calc(6rem + var(--topbar-h, 0px)) !important;
+    padding-bottom: 5.75rem !important;
   }
 
   .home-hero [class*="min-h-[640px]"] {
@@ -718,6 +724,22 @@ html {
 
   .home-hero :is(a, button, [role="button"]) {
     overflow-wrap: normal;
+  }
+
+  .home-hero [aria-live="polite"] {
+    padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
+  }
+
+  .home-hero h1 {
+    width: 100%;
+  }
+
+  .home-hero [class*="tracking-[0.2em]"] {
+    letter-spacing: 0.08em;
+  }
+
+  .home-hero img {
+    object-position: 58% center;
   }
 
   .top-contact-bar [data-status] {

@@ -1,0 +1,1 @@
+import{r as e}from"./client-BQ0CHpRP.js";import{n as t,t as n}from"./Layout-CPVIePHD.js";var r=e(),i=()=>(0,r.jsx)(n,{children:(0,r.jsx)(t,{title:`Equipment not found`})});export{i as notFoundComponent};
