@@ -1,9 +1,21 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { repairStatusLabels } from "@/lib/site-data";
-import { Bell, Image, Server, Wrench, MessageSquare, Clock, CheckCircle2, ExternalLink, ShoppingCart } from "lucide-react";
+import { hasPermission } from "@/lib/admin-access";
+import {
+  Bell,
+  Image,
+  Server,
+  Wrench,
+  MessageSquare,
+  Clock,
+  CheckCircle2,
+  ExternalLink,
+  ShoppingCart,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: Page,
@@ -11,19 +23,37 @@ export const Route = createFileRoute("/_authenticated/admin/")({
 
 function Page() {
   const qc = useQueryClient();
+  const auth = useRouteContext({ from: "/_authenticated" });
+  const canReadRepairs = hasPermission(auth, "repair_requests");
+  const canReadEnquiries = hasPermission(auth, "enquiries");
+  const canReadServices = hasPermission(auth, "services");
+  const canReadNotifications = hasPermission(auth, "notifications");
   const { data: stats } = useQuery({
-    queryKey: ["admin-stats"],
+    queryKey: ["admin-stats", auth.isAdmin ? "admin" : "staff"],
     queryFn: async () => {
+      const repairsTable = auth.isAdmin ? "repair_requests" : "repair_request_public_updates";
       const [repairs, enquiries, services, notifications, images, orders] = await Promise.all([
-        supabase
-          .from("repair_requests")
-          .select("id,status,created_at")
-          .order("created_at", { ascending: false }),
-        supabase.from("enquiries").select("id,is_read"),
-        supabase.from("services").select("slug,is_published"),
-        (supabase as any).from("notifications").select("id,is_read"),
-        supabase.storage.from("admin-images").list("", { limit: 100 }),
-        (supabase as any).from("orders").select("id,status,created_at"),
+        canReadRepairs
+          ? (supabase as any)
+              .from(repairsTable)
+              .select("id,status,created_at")
+              .order("created_at", { ascending: false })
+          : Promise.resolve({ data: [] }),
+        auth.isAdmin || canReadEnquiries
+          ? supabase.from("enquiries").select("id,is_read")
+          : Promise.resolve({ data: [] }),
+        auth.isAdmin || canReadServices
+          ? supabase.from("services").select("slug,is_published")
+          : Promise.resolve({ data: [] }),
+        auth.isAdmin || canReadNotifications
+          ? (supabase as any).from("notifications").select("id,is_read")
+          : Promise.resolve({ data: [] }),
+        auth.isAdmin
+          ? supabase.storage.from("admin-images").list("", { limit: 100 })
+          : Promise.resolve({ data: [] }),
+        auth.isAdmin
+          ? (supabase as any).from("orders").select("id,status,created_at")
+          : Promise.resolve({ data: [] }),
       ]);
       const rows = repairs.data ?? [];
       const byStatus: Record<string, number> = {};
@@ -49,16 +79,30 @@ function Page() {
   });
   useEffect(() => {
     const channel = supabase
-      .channel("admin-dashboard-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "enquiries" }, () => qc.invalidateQueries({ queryKey: ["admin-stats"] }))
-      .on("postgres_changes", { event: "*", schema: "public", table: "repair_requests" }, () => qc.invalidateQueries({ queryKey: ["admin-stats"] }))
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => qc.invalidateQueries({ queryKey: ["admin-stats"] }))
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => qc.invalidateQueries({ queryKey: ["admin-stats"] }))
+      .channel(`admin-dashboard-live-${auth.isAdmin ? "admin" : "staff"}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "enquiries" }, () =>
+        qc.invalidateQueries({ queryKey: ["admin-stats"] }),
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: auth.isAdmin ? "repair_requests" : "repair_request_public_updates",
+        },
+        () => qc.invalidateQueries({ queryKey: ["admin-stats"] }),
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () =>
+        qc.invalidateQueries({ queryKey: ["admin-stats"] }),
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () =>
+        qc.invalidateQueries({ queryKey: ["admin-stats"] }),
+      )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [qc]);
+  }, [auth.isAdmin, qc]);
 
   return (
     <div>
@@ -80,7 +124,12 @@ function Page() {
         <Stat icon={Server} label="Active services" value={stats?.activeServices ?? "—"} />
         <Stat icon={Image} label="Uploaded images" value={stats?.totalImages ?? "—"} />
         <Stat icon={Bell} label="Unread notifications" value={stats?.unreadNotifications ?? "—"} />
-        <Stat icon={ShoppingCart} label="Total orders" value={stats?.totalOrders ?? "—"} sub={stats ? `${stats.pendingOrders} pending` : ""} />
+        <Stat
+          icon={ShoppingCart}
+          label="Total orders"
+          value={stats?.totalOrders ?? "—"}
+          sub={stats ? `${stats.pendingOrders} pending` : ""}
+        />
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">

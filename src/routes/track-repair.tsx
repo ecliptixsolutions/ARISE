@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { Layout, PageHero } from "@/components/site/Layout";
 import { supabase } from "@/integrations/supabase/client";
 import { repairStatusLabels } from "@/lib/site-data";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Search, CheckCircle2, Clock } from "lucide-react";
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/track-repair")({
       { property: "og:title", content: "Track Repair" },
       {
         property: "og:description",
-        content: "Enter your request ID and contact to view current repair status.",
+        content: "Enter your request ID, mobile, or email to view current repair status.",
       },
     ],
   }),
@@ -33,19 +34,22 @@ function Page() {
   const [contact, setContact] = useState("");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any>(null);
+  const [matches, setMatches] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
 
   async function look() {
-    if (!code || !contact) {
-      toast.error("Enter request ID and mobile / email");
+    if (!code.trim() && !contact.trim()) {
+      toast.error("Enter request ID, mobile, or email");
       return;
     }
+    const lookup = normalizeLookup(code, contact);
     setLoading(true);
     setData(null);
+    setMatches([]);
     setHistory([]);
     const { data: rows, error } = await supabase.rpc("track_repair", {
-      _code: code.trim(),
-      _contact: contact.trim(),
+      _code: lookup.code,
+      _contact: lookup.contact,
     });
     if (error) {
       setLoading(false);
@@ -58,25 +62,57 @@ function Page() {
       toast.error("No matching request. Check your details.");
       return;
     }
+    if (rows.length > 1) {
+      setLoading(false);
+      setMatches(rows);
+      return;
+    }
+    await selectRequest(rows[0]);
+  }
+
+  async function selectRequest(request: any) {
+    setLoading(true);
     const { data: hRows, error: hError } = await supabase.rpc("track_repair_history", {
-      _code: code.trim(),
-      _contact: contact.trim(),
+      _code: request.request_code,
+      _contact: "",
     });
     if (hError) {
       console.error("[Track repair history failed]", hError);
       toast.error("Unable to load the status timeline right now.");
     }
     setLoading(false);
-    setData(rows[0]);
+    setData(request);
+    setMatches([]);
     setHistory(hRows ?? []);
   }
+
+  useEffect(() => {
+    if (!data?.id) return;
+    const channel = supabase
+      .channel(`track-repair-${data.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "repair_requests", filter: `id=eq.${data.id}` },
+        async () => {
+          const { data: rows } = await supabase.rpc("track_repair", {
+            _code: data.request_code,
+            _contact: "",
+          });
+          if (rows?.[0]) void selectRequest(rows[0]);
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [data?.id, data?.request_code]);
 
   return (
     <Layout>
       <PageHero
         eyebrow="Track"
         title="Track Your Repair Request"
-        subtitle="Enter your request ID plus the mobile or email used at submission."
+        subtitle="Enter your request ID, or use the mobile/email submitted with your repair request."
       />
       <section className="container-x mx-auto max-w-3xl py-14">
         <div className="rounded-3xl blue-panel p-6">
@@ -84,13 +120,13 @@ function Page() {
             <input
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              placeholder="Request ID (e.g. AR-2026-XXXXX)"
+              placeholder="Request ID (optional)"
               className="rounded-xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/15"
             />
             <input
               value={contact}
               onChange={(e) => setContact(e.target.value)}
-              placeholder="Registered mobile or email"
+              placeholder="Registered mobile or email (optional)"
               className="rounded-xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/15"
             />
             <button
@@ -102,6 +138,32 @@ function Page() {
             </button>
           </div>
         </div>
+
+        {matches.length > 0 && (
+          <div className="mt-8 rounded-3xl border border-border bg-white p-6 shadow-sm">
+            <h2 className="font-display text-lg font-semibold text-navy">
+              {matches.length} Repair Requests Found
+            </h2>
+            <div className="mt-4 divide-y divide-border">
+              {matches.map((request) => (
+                <button
+                  key={request.id}
+                  onClick={() => selectRequest(request)}
+                  className="block w-full py-4 text-left hover:bg-surface"
+                >
+                  <div className="font-mono text-sm font-semibold text-navy">
+                    {request.request_code}
+                  </div>
+                  <div className="mt-1 text-sm text-muted-foreground">
+                    {request.equipment_name} -{" "}
+                    {repairStatusLabels[request.status] ?? request.status} -{" "}
+                    {request.current_location || "Location Not Assigned"}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {data && (
           <div className="mt-8 rounded-3xl border border-border bg-white p-6 shadow-sm">
@@ -128,6 +190,7 @@ function Page() {
                   ) as any
                 }
               />
+              <Info label="Current location" value={data.current_location ?? "Office"} />
               <Info label="Last updated" value={new Date(data.updated_at).toLocaleString()} />
             </div>
             {data.customer_visible_note && (
@@ -150,6 +213,11 @@ function Page() {
                       <div className="text-sm font-medium text-navy">
                         {repairStatusLabels[h.status]}
                       </div>
+                      {h.current_location && (
+                        <div className="text-xs text-muted-foreground">
+                          Location: {h.current_location}
+                        </div>
+                      )}
                       {h.note && <div className="text-xs text-muted-foreground">{h.note}</div>}
                       <div className="text-[11px] text-muted-foreground">
                         {new Date(h.created_at).toLocaleString()}
@@ -165,6 +233,18 @@ function Page() {
     </Layout>
   );
 }
+
+function normalizeLookup(code: string, contact: string) {
+  const c = code.trim();
+  const contactValue = contact.trim();
+  if (contactValue || isRequestCode(c)) return { code: c, contact: contactValue };
+  return { code: "", contact: c };
+}
+
+function isRequestCode(value: string) {
+  return /^AR-\d{4}-/i.test(value.trim());
+}
+
 function Info({ label, value }: { label: string; value: any }) {
   return (
     <div className="rounded-lg border border-border p-4">

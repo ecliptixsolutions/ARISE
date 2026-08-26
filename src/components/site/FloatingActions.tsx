@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, Bot, ExternalLink, Loader2, Send, Sparkles, X } from "lucide-react";
 import { equipmentCategories, services, settings, whatsappHref } from "@/lib/site-data";
-import { supabase } from "@/integrations/supabase/client";
+import { createRepairRequest } from "@/lib/repair-requests";
 import { WhatsAppIcon } from "./WhatsAppIcon";
 
 type ChatMessage = {
@@ -40,12 +40,26 @@ const leadQuestions: Array<{ key: LeadField; question: string; optional?: boolea
   { key: "mobile", question: "Please share your phone number." },
   { key: "equipment_name", question: "What equipment type needs repair?" },
   { key: "brand", question: "Which brand is it?" },
-  { key: "model_no", question: "What is the model number, if available? You can type 'skip'." , optional: true },
+  {
+    key: "model_no",
+    question: "What is the model number, if available? You can type 'skip'.",
+    optional: true,
+  },
   { key: "problem_description", question: "Briefly describe the problem or fault." },
-  { key: "details", question: "Any additional details, city, pickup requirement, or urgency? You can type 'skip'.", optional: true },
+  {
+    key: "details",
+    question: "Any additional details, city, pickup requirement, or urgency? You can type 'skip'.",
+    optional: true,
+  },
 ];
 
-const quickActions = ["Repair Services", "Supported Brands", "Repair Process", "Get a Quote", "Contact Arise"];
+const quickActions = [
+  "Repair Services",
+  "Supported Brands",
+  "Repair Process",
+  "Get a Quote",
+  "Contact Arise",
+];
 
 const supportedBrands = [
   "Olympus",
@@ -73,12 +87,6 @@ const firstMessage: ChatMessage = {
   actions: quickActions,
 };
 
-function makeCode() {
-  const y = new Date().getFullYear();
-  const rnd = Math.random().toString(36).slice(2, 7).toUpperCase();
-  return `AR-${y}-${rnd}`;
-}
-
 function servicesText() {
   const names = [
     "Endoscope Repair",
@@ -97,8 +105,14 @@ function servicesText() {
 
 function findServiceAnswer(lower: string) {
   const match = services.find((service) => {
-    const haystack = `${service.name} ${service.category} ${service.short} ${service.aliases?.join(" ") ?? ""}`.toLowerCase();
-    return service.name.toLowerCase().split(/\s+/).some((word) => word.length > 4 && lower.includes(word)) || haystack.includes(lower);
+    const haystack =
+      `${service.name} ${service.category} ${service.short} ${service.aliases?.join(" ") ?? ""}`.toLowerCase();
+    return (
+      service.name
+        .toLowerCase()
+        .split(/\s+/)
+        .some((word) => word.length > 4 && lower.includes(word)) || haystack.includes(lower)
+    );
   });
 
   if (!match) return null;
@@ -108,7 +122,12 @@ function findServiceAnswer(lower: string) {
 function getBotReply(text: string): ChatMessage {
   const lower = text.toLowerCase();
 
-  if (lower.includes("quote") || lower.includes("estimate") || lower.includes("price") || lower.includes("cost")) {
+  if (
+    lower.includes("quote") ||
+    lower.includes("estimate") ||
+    lower.includes("price") ||
+    lower.includes("cost")
+  ) {
     return {
       role: "bot",
       text: "I can help capture a repair/quote request. I’ll ask for name, email, phone, equipment type, brand, model if available, problem, and extra details.",
@@ -116,7 +135,10 @@ function getBotReply(text: string): ChatMessage {
     };
   }
 
-  if (lower.includes("brand") || supportedBrands.some((brand) => lower.includes(brand.toLowerCase()))) {
+  if (
+    lower.includes("brand") ||
+    supportedBrands.some((brand) => lower.includes(brand.toLowerCase()))
+  ) {
     const named = supportedBrands.find((brand) => lower.includes(brand.toLowerCase()));
     return {
       role: "bot",
@@ -127,7 +149,12 @@ function getBotReply(text: string): ChatMessage {
     };
   }
 
-  if (lower.includes("process") || lower.includes("send") || lower.includes("ship") || lower.includes("pickup")) {
+  if (
+    lower.includes("process") ||
+    lower.includes("send") ||
+    lower.includes("ship") ||
+    lower.includes("pickup")
+  ) {
     return {
       role: "bot",
       text: "The repair flow is: submit a repair request, arrange pickup or delivery, technical inspection, diagnosis and quotation, component-level repair after approval, quality testing, then dispatch. You can ship equipment to Arise or contact the team for next steps.",
@@ -143,7 +170,12 @@ function getBotReply(text: string): ChatMessage {
     };
   }
 
-  if (lower.includes("poor image") || lower.includes("image quality") || lower.includes("leak") || lower.includes("visible damage")) {
+  if (
+    lower.includes("poor image") ||
+    lower.includes("image quality") ||
+    lower.includes("leak") ||
+    lower.includes("visible damage")
+  ) {
     return {
       role: "bot",
       text: "For scope image or leakage issues, please share: brand, model, whether image is absent or degraded, whether there is visible damage, and whether leak testing was done. Arise can inspect and advise repair scope; please do not submit patient data.",
@@ -151,7 +183,13 @@ function getBotReply(text: string): ChatMessage {
     };
   }
 
-  if (lower.includes("service") || lower.includes("repair") || lower.includes("endoscope") || lower.includes("camera head") || lower.includes("scope")) {
+  if (
+    lower.includes("service") ||
+    lower.includes("repair") ||
+    lower.includes("endoscope") ||
+    lower.includes("camera head") ||
+    lower.includes("scope")
+  ) {
     const specific = findServiceAnswer(lower);
     return {
       role: "bot",
@@ -211,28 +249,33 @@ export function FloatingActions() {
   }, [messages, typing]);
 
   async function submitLead(data: Lead) {
-    const request_code = makeCode();
     const problem = `${data.problem_description}${data.details ? `\n\nAdditional details: ${data.details}` : ""}`;
-    const { error } = await supabase.from("repair_requests").insert({
-      request_code,
-      full_name: data.full_name,
-      email: data.email,
-      mobile: data.mobile,
-      whatsapp: data.mobile,
-      equipment_name: data.equipment_name,
-      equipment_category: equipmentCategories.find((category) =>
-        data.equipment_name.toLowerCase().includes(category.toLowerCase()),
-      ) ?? null,
-      brand: data.brand,
-      model_no: data.model_no,
-      problem_description: problem,
-      urgency: "normal",
-      preferred_contact: "phone",
-      pickup_required: false,
-      consent: true,
-    });
-
-    if (error) {
+    try {
+      const request_code = await createRepairRequest({
+        full_name: data.full_name,
+        email: data.email,
+        mobile: data.mobile,
+        whatsapp: data.mobile,
+        equipment_name: data.equipment_name,
+        equipment_category:
+          equipmentCategories.find((category) =>
+            data.equipment_name.toLowerCase().includes(category.toLowerCase()),
+          ) ?? "",
+        brand: data.brand,
+        model_no: data.model_no,
+        problem_description: problem,
+        urgency: "normal",
+        preferred_contact: "phone",
+        pickup_required: false,
+        request_source: "Website",
+      });
+      setLastLead(null);
+      return {
+        role: "bot" as const,
+        text: `Thank you. Your repair/quote request has been captured. Our team will review the details and contact you. Request ID: ${request_code}`,
+        actions: ["Continue on WhatsApp", "Contact Arise"],
+      };
+    } catch {
       setLastLead(data);
       return {
         role: "bot" as const,
@@ -240,13 +283,6 @@ export function FloatingActions() {
         actions: ["Retry submission", "Continue on WhatsApp"],
       };
     }
-
-    setLastLead(null);
-    return {
-      role: "bot" as const,
-      text: `Thank you. Your repair/quote request has been captured. Our team will review the details and contact you. Request ID: ${request_code}`,
-      actions: ["Continue on WhatsApp", "Contact Arise"],
-    };
   }
 
   async function handleLeadAnswer(text: string): Promise<ChatMessage> {
@@ -278,7 +314,13 @@ export function FloatingActions() {
       window.open(whatsappUrl, "_blank", "noopener,noreferrer");
       return { role: "bot", text: "Opening WhatsApp so you can continue with the Arise team." };
     }
-    if (leadStep !== null || lower.includes("quote") || lower.includes("estimate") || lower === "start quote request" || lower === "retry submission") {
+    if (
+      leadStep !== null ||
+      lower.includes("quote") ||
+      lower.includes("estimate") ||
+      lower === "start quote request" ||
+      lower === "retry submission"
+    ) {
       return handleLeadAnswer(text);
     }
     return getBotReply(text);
@@ -337,10 +379,18 @@ export function FloatingActions() {
             </button>
           </div>
 
-          <div ref={scrollRef} className="min-h-[220px] flex-1 space-y-3 overflow-y-auto bg-[#f7fbfd] p-4 sm:h-[min(58vh,430px)] sm:flex-none">
+          <div
+            ref={scrollRef}
+            className="min-h-[220px] flex-1 space-y-3 overflow-y-auto bg-[#f7fbfd] p-4 sm:h-[min(58vh,430px)] sm:flex-none"
+          >
             {messages.map((message, index) => (
-              <div key={`${message.role}-${index}`} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[86%] ${message.role === "user" ? "items-end" : "items-start"} flex flex-col gap-2`}>
+              <div
+                key={`${message.role}-${index}`}
+                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[86%] ${message.role === "user" ? "items-end" : "items-start"} flex flex-col gap-2`}
+                >
                   <div
                     className={`rounded-2xl px-3.5 py-2.5 text-sm leading-6 shadow-sm ${
                       message.role === "user"

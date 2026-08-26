@@ -51,6 +51,7 @@ import { Route as AuthenticatedAdminRepairsRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminRequestsRouteImport } from './routes/_authenticated/admin/requests'
 import { Route as AuthenticatedAdminServicesRouteImport } from './routes/_authenticated/admin/services'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
+import { Route as AuthenticatedAdminStaffRouteImport } from './routes/_authenticated/admin/staff'
 import { Route as AuthenticatedAdminTestimonialsRouteImport } from './routes/_authenticated/admin/testimonials'
 import { Route as AuthenticatedAdminTrackingRouteImport } from './routes/_authenticated/admin/tracking'
 import { Route as AuthenticatedAdminOrdersOrderIdRouteImport } from './routes/_authenticated/admin/orders.$orderId'
@@ -273,6 +274,11 @@ const AuthenticatedAdminSettingsRoute =
     path: '/admin/settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminStaffRoute = AuthenticatedAdminStaffRouteImport.update({
+  id: '/admin/staff',
+  path: '/admin/staff',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminTestimonialsRoute =
   AuthenticatedAdminTestimonialsRouteImport.update({
     id: '/admin/testimonials',
@@ -333,6 +339,7 @@ export interface FileRoutesByFullPath {
   '/admin/requests': typeof AuthenticatedAdminRequestsRoute
   '/admin/services': typeof AuthenticatedAdminServicesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/staff': typeof AuthenticatedAdminStaffRoute
   '/admin/testimonials': typeof AuthenticatedAdminTestimonialsRoute
   '/admin/tracking': typeof AuthenticatedAdminTrackingRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -379,6 +386,7 @@ export interface FileRoutesByTo {
   '/admin/requests': typeof AuthenticatedAdminRequestsRoute
   '/admin/services': typeof AuthenticatedAdminServicesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/staff': typeof AuthenticatedAdminStaffRoute
   '/admin/testimonials': typeof AuthenticatedAdminTestimonialsRoute
   '/admin/tracking': typeof AuthenticatedAdminTrackingRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -427,6 +435,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/requests': typeof AuthenticatedAdminRequestsRoute
   '/_authenticated/admin/services': typeof AuthenticatedAdminServicesRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/_authenticated/admin/staff': typeof AuthenticatedAdminStaffRoute
   '/_authenticated/admin/testimonials': typeof AuthenticatedAdminTestimonialsRoute
   '/_authenticated/admin/tracking': typeof AuthenticatedAdminTrackingRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -475,6 +484,7 @@ export interface FileRouteTypes {
     | '/admin/requests'
     | '/admin/services'
     | '/admin/settings'
+    | '/admin/staff'
     | '/admin/testimonials'
     | '/admin/tracking'
     | '/admin/'
@@ -521,6 +531,7 @@ export interface FileRouteTypes {
     | '/admin/requests'
     | '/admin/services'
     | '/admin/settings'
+    | '/admin/staff'
     | '/admin/testimonials'
     | '/admin/tracking'
     | '/admin'
@@ -568,6 +579,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/requests'
     | '/_authenticated/admin/services'
     | '/_authenticated/admin/settings'
+    | '/_authenticated/admin/staff'
     | '/_authenticated/admin/testimonials'
     | '/_authenticated/admin/tracking'
     | '/_authenticated/admin/'
@@ -902,6 +914,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/staff': {
+      id: '/_authenticated/admin/staff'
+      path: '/admin/staff'
+      fullPath: '/admin/staff'
+      preLoaderRoute: typeof AuthenticatedAdminStaffRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/testimonials': {
       id: '/_authenticated/admin/testimonials'
       path: '/admin/testimonials'
@@ -950,6 +969,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRequestsRoute: typeof AuthenticatedAdminRequestsRoute
   AuthenticatedAdminServicesRoute: typeof AuthenticatedAdminServicesRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
+  AuthenticatedAdminStaffRoute: typeof AuthenticatedAdminStaffRoute
   AuthenticatedAdminTestimonialsRoute: typeof AuthenticatedAdminTestimonialsRoute
   AuthenticatedAdminTrackingRoute: typeof AuthenticatedAdminTrackingRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -965,6 +985,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRequestsRoute: AuthenticatedAdminRequestsRoute,
   AuthenticatedAdminServicesRoute: AuthenticatedAdminServicesRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
+  AuthenticatedAdminStaffRoute: AuthenticatedAdminStaffRoute,
   AuthenticatedAdminTestimonialsRoute: AuthenticatedAdminTestimonialsRoute,
   AuthenticatedAdminTrackingRoute: AuthenticatedAdminTrackingRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,

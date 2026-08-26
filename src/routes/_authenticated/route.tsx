@@ -1,21 +1,19 @@
-import { createFileRoute, Outlet, redirect, Link, useRouter } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
-  Bell,
-  Image,
-  LayoutDashboard,
-  LogOut,
-  MessageSquare,
-  Server,
-  Settings,
-  Star,
-  Truck,
-  Wrench,
-} from "lucide-react";
+  createFileRoute,
+  Outlet,
+  redirect,
+  Link,
+  useLocation,
+  useRouter,
+} from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { LogOut } from "lucide-react";
 import { Logo } from "@/components/site/Logo";
 import { toast } from "sonner";
+import { adminNavItems, canAccessAdminItem } from "@/lib/admin-access";
 
 const seenNotificationToasts = new Set<string>();
 
@@ -23,7 +21,8 @@ function rememberNotificationToast(id: string) {
   if (seenNotificationToasts.has(id)) return false;
   seenNotificationToasts.add(id);
   if (seenNotificationToasts.size > 200) {
-    seenNotificationToasts.delete(seenNotificationToasts.values().next().value);
+    const first = seenNotificationToasts.values().next().value;
+    if (first) seenNotificationToasts.delete(first);
   }
   return true;
 }
@@ -42,18 +41,59 @@ export const Route = createFileRoute("/_authenticated")({
       await supabase.auth.signOut();
       throw redirect({ to: "/admin/login", search: { denied: "1" } });
     }
-    return { user: data.user };
+    const [{ data: profile }, { data: permissions }] = await Promise.all([
+      (supabase as any).from("profiles").select("is_active").eq("id", data.user.id).maybeSingle(),
+      (supabase as any).from("staff_permissions").select("permission").eq("user_id", data.user.id),
+    ]);
+    if (isStaff && profile?.is_active === false) {
+      await supabase.auth.signOut();
+      throw redirect({ to: "/admin/login", search: { denied: "disabled" } });
+    }
+    const { data: aal, error: aalError } = await (
+      supabase.auth.mfa as any
+    ).getAuthenticatorAssuranceLevel();
+    if (aalError || aal?.currentLevel !== "aal2") {
+      throw redirect({
+        to: "/admin/login",
+        search: { mfa: aal?.nextLevel === "aal2" ? "verify" : "enroll" },
+      });
+    }
+    return {
+      user: data.user,
+      isAdmin: Boolean(isAdmin),
+      isStaff: Boolean(isStaff),
+      permissions: (permissions ?? []).map((p: any) => p.permission),
+    };
   },
   component: Shell,
 });
 
 function Shell() {
   const router = useRouter();
+  const location = useLocation();
   const qc = useQueryClient();
+  const auth = Route.useRouteContext();
   const [unread, setUnread] = useState(0);
+  const navItems = useMemo(
+    () => adminNavItems.filter((item) => canAccessAdminItem(auth, item)),
+    [auth],
+  );
+
+  useEffect(() => {
+    const current = adminNavItems.find((item) =>
+      item.exact ? location.pathname === item.to : location.pathname.startsWith(item.to),
+    );
+    if (current && !canAccessAdminItem(auth, current)) {
+      router.navigate({ to: (navItems[0]?.to ?? "/admin") as any });
+    }
+  }, [auth, location.pathname, navItems, router]);
+
   useEffect(() => {
     async function loadUnread() {
-      const { data } = await (supabase as any).from("notifications").select("id").eq("is_read", false);
+      const { data } = await (supabase as any)
+        .from("notifications")
+        .select("id")
+        .eq("is_read", false);
       setUnread(data?.length ?? 0);
     }
     void loadUnread();
@@ -68,30 +108,34 @@ function Shell() {
     }
     const channel = supabase
       .channel("admin-shell-notifications")
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, (payload) => {
-        void loadUnread();
-        qc.invalidateQueries({ queryKey: ["admin-notifications"] });
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications" },
+        (payload) => {
+          void loadUnread();
+          qc.invalidateQueries({ queryKey: ["admin-notifications"] });
 
-        if (payload.eventType !== "INSERT") return;
-        const notification = payload.new as any;
-        if (!notification?.id || !rememberNotificationToast(notification.id)) return;
+          if (payload.eventType !== "INSERT") return;
+          const notification = payload.new as any;
+          if (!notification?.id || !rememberNotificationToast(notification.id)) return;
 
-        const message =
-          notification.related_table === "repair_requests"
-            ? "New Repair Request Received"
-            : notification.related_table === "enquiries"
-              ? "New Enquiry Received"
-              : notification.title || "New notification";
+          const message =
+            notification.related_table === "repair_requests"
+              ? "New Repair Request Received"
+              : notification.related_table === "enquiries"
+                ? "New Enquiry Received"
+                : notification.title || "New notification";
 
-        toast.info(message, {
-          description: notification.message,
-          duration: 5000,
-          action: {
-            label: "Open",
-            onClick: () => openNotification(notification),
-          },
-        });
-      })
+          toast.info(message, {
+            description: notification.message,
+            duration: 5000,
+            action: {
+              label: "Open",
+              onClick: () => openNotification(notification),
+            },
+          });
+        },
+      )
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
           void loadUnread();
@@ -106,18 +150,6 @@ function Shell() {
     await supabase.auth.signOut();
     router.navigate({ to: "/admin/login" });
   }
-  const navItems = [
-    { to: "/admin", icon: LayoutDashboard, label: "Dashboard", exact: true },
-    { to: "/admin/tracking", icon: Truck, label: "Tracking" },
-    { to: "/admin/services", icon: Server, label: "Services" },
-    { to: "/admin/repair-requests", icon: Wrench, label: "Repair Requests" },
-    { to: "/admin/orders", icon: Bell, label: "Orders" },
-    { to: "/admin/enquiries", icon: MessageSquare, label: "Enquiries" },
-    { to: "/admin/images", icon: Image, label: "Images" },
-    { to: "/admin/notifications", icon: Bell, label: "Notifications" },
-    { to: "/admin/testimonials", icon: Star, label: "Testimonials" },
-    { to: "/admin/settings", icon: Settings, label: "Settings" },
-  ];
   return (
     <div className="admin-shell flex min-h-screen bg-surface">
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-border bg-surface lg:block">
