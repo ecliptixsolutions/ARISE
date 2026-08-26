@@ -49,15 +49,6 @@ export const Route = createFileRoute("/_authenticated")({
       await supabase.auth.signOut();
       throw redirect({ to: "/admin/login", search: { denied: "disabled" } });
     }
-    const { data: aal, error: aalError } = await (
-      supabase.auth.mfa as any
-    ).getAuthenticatorAssuranceLevel();
-    if (aalError || aal?.currentLevel !== "aal2") {
-      throw redirect({
-        to: "/admin/login",
-        search: { mfa: aal?.nextLevel === "aal2" ? "verify" : "enroll" },
-      });
-    }
     return {
       user: data.user,
       isAdmin: Boolean(isAdmin),
