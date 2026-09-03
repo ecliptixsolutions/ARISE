@@ -949,11 +949,36 @@ export const faqs = [
   },
 ];
 
-export const blogs = [
+export type Blog = {
+  slug: string;
+  title: string;
+  category: string;
+  difficulty?: "Beginner" | "Intermediate" | "Advanced" | "Expert";
+  readingTime?: number;
+  date?: string;
+  excerpt: string;
+  image?: string;
+  imageAlt?: string;
+  keywords?: string[];
+  equipment?: string[];
+  body: string;
+  takeaways?: string[];
+  seoTitle?: string;
+  seoDescription?: string;
+};
+
+export const blogs: Blog[] = [
   {
     slug: "endoscope-maintenance-basics",
     title: "Endoscope Maintenance: A Practical Care Guide",
-    category: "Endoscopy Maintenance",
+    category: "Preventive Maintenance",
+    difficulty: "Beginner",
+    readingTime: 5,
+    date: "2026-08-12",
+    image: endoscopeImg,
+    imageAlt: "Endoscopy equipment prepared for inspection and service",
+    keywords: ["endoscope maintenance", "endoscopy repair", "equipment care"],
+    equipment: ["Endoscopes", "Rigid Scopes", "Flexible Scopes"],
     excerpt:
       "Simple daily practices that extend the working life of your rigid and flexible endoscopes.",
     body: "Endoscopes are precision instruments. Daily cleaning discipline, careful storage, correct leakage testing and a strong bio-cleaning protocol are the four practices that most influence scope life. This guide walks through each of them in the context of an average endoscopy centre.\n\nSection 1 — Cleaning discipline. Follow the manufacturer's IFU and never skip pre-cleaning at the point of use.\n\nSection 2 — Storage. Store scopes vertically in a dedicated cabinet.\n\nSection 3 — Leakage testing. Perform a leakage test after every procedure and before reprocessing.\n\nSection 4 — Handling. Train every staff member on scope handling to reduce accidental damage.",
@@ -961,16 +986,237 @@ export const blogs = [
   {
     slug: "pcb-repair-what-to-expect",
     title: "Board-Level PCB Repair: What To Expect",
-    category: "PCB Repair",
+    category: "Tech Explained",
+    difficulty: "Advanced",
+    readingTime: 6,
+    date: "2026-08-10",
+    image: servicePcbDiagnosisImg,
+    imageAlt: "Technician diagnosing a medical equipment circuit board",
+    keywords: ["PCB repair", "board-level repair", "component-level repair"],
+    equipment: ["Medical Equipment PCBs", "Video Processors", "Camera Heads"],
     excerpt: "Understanding component-level diagnosis for medical equipment PCBs.",
     body: "Board-level repair replaces individual failed components rather than swapping the entire assembly. This article walks through the workflow: visual inspection, powered testing, thermal imaging, signal tracing, component-level repair, and post-repair verification.",
   },
   {
     slug: "camera-head-care",
     title: "Camera Head Care: Small Habits, Big Savings",
-    category: "Camera Head Care",
+    category: "Equipment Care",
+    difficulty: "Beginner",
+    readingTime: 4,
+    date: "2026-08-08",
+    image: cameraImg,
+    imageAlt: "Medical camera head equipment for endoscopy imaging",
+    keywords: ["camera head repair", "camera head care", "endoscopy imaging"],
+    equipment: ["Camera Heads", "Endoscopy Systems"],
     excerpt: "Small day-to-day habits that keep camera heads image-perfect.",
     body: "Camera heads are one of the most repair-prone parts of any endoscopy stack. This piece covers cable strain relief, cleaning discipline, connector care and how to spot early failure signs before an image drops out mid-case.",
+  },
+  {
+    slug: "common-endoscope-problems",
+    title: "Common Endoscope Problems and What They May Indicate",
+    category: "Fault Analysis",
+    difficulty: "Intermediate",
+    readingTime: 7,
+    date: "2026-08-06",
+    image: serviceOpticalInspectionImg,
+    imageAlt: "Optical inspection setup for precision equipment service",
+    keywords: ["endoscope problems", "endoscope fault analysis", "endoscopy diagnostics"],
+    equipment: ["Endoscopes", "Laparoscopes", "Arthroscopes", "Cystoscopes"],
+    excerpt:
+      "A repair-focused overview of blurred images, light loss, leakage, stiffness and connector faults.",
+    body: "Endoscope faults often show up as changes in image quality, light transmission, handling or leakage checks. These symptoms do not always identify the exact failed part, but they help technicians decide what to inspect first.\n\nA blurred, dark or distorted image can point toward lens damage, contamination, optical misalignment or light-transmission issues. Physical inspection and image testing are needed before repair feasibility can be confirmed.\n\nLeakage, stiffness, poor angulation or damaged connectors should be treated seriously. Continued use can worsen internal damage. A professional technical assessment helps decide whether servicing, component repair or broader refurbishment is required.",
+    takeaways: [
+      "Symptoms guide inspection, but they do not replace diagnosis.",
+      "Image, light and leakage issues should be assessed before further use.",
+      "Repair scope depends on condition, equipment type and technical feasibility.",
+    ],
+    seoTitle: "Common Endoscope Problems | Fault Analysis Guide",
+    seoDescription:
+      "Repair-focused guide to common endoscope faults including image problems, leakage, light loss and connector damage.",
+  },
+  {
+    slug: "rigid-scope-optical-problems",
+    title: "Rigid Scope Optical Problems: What Technicians Check",
+    category: "Repair Guides",
+    difficulty: "Intermediate",
+    readingTime: 6,
+    date: "2026-08-04",
+    image: endoscopeImg,
+    imageAlt: "Rigid endoscope equipment for optical repair assessment",
+    keywords: ["rigid scope repair", "laparoscope repair", "optical inspection"],
+    equipment: ["Rigid Scopes", "Laparoscopes", "Arthroscopes", "Cystoscopes"],
+    excerpt:
+      "How optical clarity, rod-lens condition, sheath damage and light transmission are reviewed during rigid scope repair.",
+    body: "Rigid scopes rely on clean alignment, intact lenses and stable light transmission. When the image becomes cloudy, dark or distorted, the repair assessment usually starts with optical inspection and external damage checks.\n\nTechnicians check the objective lens, eyepiece, sheath, light post and internal optical path where possible. A bent sheath, cracked lens, moisture ingress or failed seal can all affect image quality.\n\nRepair may involve optical alignment, lens work, sheath restoration or seal replacement depending on condition. Final image and functional checks are needed before the scope is returned to service use.",
+    takeaways: [
+      "Rigid scope image problems can come from optics, seals, sheath damage or light loss.",
+      "Inspection determines whether repair or refurbishment is appropriate.",
+      "Final image-quality testing is part of a responsible repair workflow.",
+    ],
+    seoTitle: "Rigid Scope Repair Guide | Optical Problems",
+    seoDescription:
+      "Repair guide for rigid scope optical problems, including blurred images, damaged lenses, sheath issues and light transmission checks.",
+  },
+  {
+    slug: "flexible-scope-repair-signs",
+    title: "When a Flexible Scope Needs Professional Repair",
+    category: "Repair Guides",
+    difficulty: "Intermediate",
+    readingTime: 6,
+    date: "2026-08-02",
+    image: endoscopeImg,
+    imageAlt: "Flexible endoscope equipment under technical review",
+    keywords: ["flexible scope repair", "endoscope leakage", "scope diagnostics"],
+    equipment: ["Flexible Scopes", "Ureteroscopes", "Nephroscopes"],
+    excerpt:
+      "Warning signs such as leakage, deflection issues, working-channel damage and intermittent image problems.",
+    body: "Flexible scopes combine optics, electronics, insertion components, channels and deflection systems. Because the structure is delicate, small faults should be inspected before they become deeper internal damage.\n\nCommon warning signs include failed leakage checks, poor deflection, working-channel resistance, intermittent image loss, connector damage and visible insertion-tube wear. These signs should not be ignored or handled as routine cleaning issues.\n\nA professional repair assessment reviews the likely fault area and whether service is feasible. The repair path can vary from connector work to insertion-section repair, angulation service or image-system diagnosis.",
+    takeaways: [
+      "Leakage, deflection and image issues are repair-assessment signals.",
+      "Flexible scope faults can worsen if the unit remains in use.",
+      "Inspection findings determine the repair scope.",
+    ],
+    seoTitle: "Flexible Scope Repair Signs | Arise Healthcare Solutions",
+    seoDescription:
+      "Learn when a flexible scope should be sent for professional inspection, including leakage, deflection and image-quality issues.",
+  },
+  {
+    slug: "endoscopy-processor-image-problems",
+    title: "Endoscopy Processor Image Problems: A Repair View",
+    category: "Fault Analysis",
+    difficulty: "Advanced",
+    readingTime: 7,
+    date: "2026-07-30",
+    image: processorImg,
+    imageAlt: "Endoscopy video processor equipment for servicing",
+    keywords: ["processor repair", "video processor faults", "endoscopy signal problems"],
+    equipment: ["Video Processors", "Camera Heads", "Medical Monitors"],
+    excerpt:
+      "How no-signal, colour, port, power and overheating issues are approached during processor diagnosis.",
+    body: "Image faults in an endoscopy stack can originate from the camera head, processor, cable, monitor or connector path. Processor diagnosis starts by separating signal issues from display, power and external cable problems.\n\nCommon processor concerns include no output, error messages, overheating, port damage and colour-processing issues. Inspection may involve connector checks, internal board review, cooling assessment and controlled functional testing.\n\nRepair feasibility depends on the fault, board condition and available parts. After repair, the unit should be tested with compatible equipment to verify signal stability and image behaviour.",
+    takeaways: [
+      "Processor image faults should be isolated from camera and monitor issues.",
+      "Ports, cooling, power and internal boards are common inspection areas.",
+      "Functional signal testing is needed after repair.",
+    ],
+    seoTitle: "Endoscopy Processor Repair | Image Problem Diagnosis",
+    seoDescription:
+      "Repair-focused explanation of endoscopy processor image problems, no-signal faults, connector damage and board-level diagnosis.",
+  },
+  {
+    slug: "light-source-repair-guide",
+    title: "Light Source Repair Guide for Endoscopy Systems",
+    category: "Repair Guides",
+    difficulty: "Intermediate",
+    readingTime: 5,
+    date: "2026-07-28",
+    image: lightImg,
+    imageAlt: "Medical light source equipment for endoscopy service",
+    keywords: ["light source repair", "LED light source", "Xenon light source"],
+    equipment: ["Light Sources", "Endoscopy Systems"],
+    excerpt:
+      "A service overview for low output, no light, overheating, fan faults and power-section issues.",
+    body: "A light source fault can affect the entire endoscopy image chain. Low light, no output, overheating or repeated lamp errors should be inspected before assuming the scope is the cause.\n\nService checks may include the lamp or LED module, cooling fan, power supply, fibre connection and control panel. The exact repair path depends on equipment design and the fault observed during inspection.\n\nAfter repair, output and functional behaviour should be checked in a controlled setup. Equipment should not be returned to use solely because a lamp or module was replaced.",
+    takeaways: [
+      "Low illumination can come from the light source, cable or scope path.",
+      "Cooling and power faults need proper technical diagnosis.",
+      "Final output checks help confirm service quality.",
+    ],
+    seoTitle: "Endoscopy Light Source Repair Guide",
+    seoDescription:
+      "Guide to common LED and Xenon light source issues including low output, overheating, lamp faults and power-section repair.",
+  },
+  {
+    slug: "co2-insufflator-inspection",
+    title: "CO2 Insufflator Inspection and Repair Considerations",
+    category: "Equipment Care",
+    difficulty: "Advanced",
+    readingTime: 5,
+    date: "2026-07-25",
+    image: co2Img,
+    imageAlt: "CO2 insufflator equipment for surgical service assessment",
+    keywords: ["CO2 insufflator repair", "insufflator inspection", "surgical equipment service"],
+    equipment: ["CO2 Insufflators", "Surgical Equipment"],
+    excerpt:
+      "Repair considerations for pressure instability, flow issues, alarms, sensors and control-panel faults.",
+    body: "CO2 insufflators require careful inspection because pressure, flow, alarms and controls all affect equipment function. A repair assessment should focus on the reported symptom and the unit's observed behaviour during testing.\n\nCommon issues include unstable pressure, flow problems, error messages, sensor faults, valve concerns and control-panel problems. Service availability depends on model, condition, parts and inspection results.\n\nAny repaired insufflator should go through functional and safety checks appropriate to the equipment before it is returned to the customer's workflow.",
+    takeaways: [
+      "Pressure, flow and alarm complaints need controlled technical assessment.",
+      "Repair feasibility depends on model, condition and parts availability.",
+      "Functional checks are a required part of the service process.",
+    ],
+    seoTitle: "CO2 Insufflator Repair and Inspection Guide",
+    seoDescription:
+      "Repair considerations for CO2 insufflators, including pressure, flow, alarm, sensor and control-panel faults.",
+  },
+  {
+    slug: "medical-equipment-repair-vs-replacement",
+    title: "Medical Equipment Repair vs Replacement: How to Decide",
+    category: "Cost & Repair Decisions",
+    difficulty: "Beginner",
+    readingTime: 6,
+    date: "2026-07-22",
+    image: serviceMedicalEquipmentImg,
+    imageAlt: "Medical equipment arranged for repair decision assessment",
+    keywords: ["medical equipment repair", "repair vs replacement", "repair feasibility"],
+    equipment: ["Endoscopy Systems", "Medical Equipment", "PCBs"],
+    excerpt:
+      "A practical decision framework based on condition, fault type, parts availability and service feasibility.",
+    body: "Repair versus replacement should be decided after technical inspection, not guesswork. The right choice depends on equipment condition, fault type, age, parts availability and the importance of the equipment in the facility's workflow.\n\nRepair may be sensible when the fault is isolated, parts are available and the equipment can pass functional checks after service. Replacement may be more appropriate when damage is extensive, parts are unavailable or repair would not restore dependable function.\n\nArise Healthcare Solutions assesses supported equipment and provides a repair scope where feasible. The final decision should consider technical findings, quotation details and the customer's operational needs.",
+    takeaways: [
+      "Inspection findings should drive the repair-or-replace decision.",
+      "Parts availability and equipment condition matter as much as the visible fault.",
+      "A clear quotation helps teams make a practical service decision.",
+    ],
+    seoTitle: "Medical Equipment Repair vs Replacement Guide",
+    seoDescription:
+      "How to evaluate medical equipment repair versus replacement based on fault type, equipment condition, parts availability and repair feasibility.",
+  },
+  {
+    slug: "medical-monitor-repair-guide",
+    title: "Medical Monitor Repair Guide: Display and Power Faults",
+    category: "Fault Analysis",
+    difficulty: "Intermediate",
+    readingTime: 5,
+    date: "2026-07-20",
+    image: monitorImg,
+    imageAlt: "Medical monitor equipment used in clinical imaging setups",
+    keywords: ["medical monitor repair", "display repair", "monitor power fault"],
+    equipment: ["Medical Monitors", "Patient Monitors"],
+    excerpt:
+      "What blank displays, flicker, colour distortion, backlight failure and input-port damage may indicate.",
+    body: "Medical display faults can come from the panel, backlight, power section, input ports or control board. The first repair step is to confirm whether the fault follows the monitor or comes from the connected equipment.\n\nBlank screens, flicker, colour distortion and input problems each point to different inspection paths. Physical port damage and intermittent power issues should be checked before deeper board-level diagnosis.\n\nAfter repair, the display should be tested with suitable inputs and observed for stable operation. Colour or image behaviour should be reviewed according to the equipment's intended use.",
+    takeaways: [
+      "Monitor faults should be isolated from cable and source-equipment issues.",
+      "Power, ports, panel and backlight are common inspection areas.",
+      "Stable display testing is needed after repair.",
+    ],
+    seoTitle: "Medical Monitor Repair Guide | Display Faults",
+    seoDescription:
+      "Repair guide for medical monitor display, backlight, power, flicker, colour and input-port faults.",
+  },
+  {
+    slug: "repair-intake-process",
+    title: "What Happens During a Medical Equipment Repair Intake?",
+    category: "Repair Insights",
+    difficulty: "Beginner",
+    readingTime: 4,
+    date: "2026-07-18",
+    image: serviceLabTestingImg,
+    imageAlt: "Technical lab equipment used for service intake and testing",
+    keywords: ["repair request", "equipment inspection", "medical equipment service"],
+    equipment: ["Medical Equipment", "Endoscopy Systems", "PCBs"],
+    excerpt:
+      "A clear look at request submission, equipment receipt, diagnosis, quotation, repair and final testing.",
+    body: "A good repair process starts with clear equipment details and a useful fault description. The repair request should include equipment type, brand, model and the issue observed by the team.\n\nAfter the equipment is received, technicians inspect the condition, diagnose the reported fault and identify whether repair is feasible. The quotation should describe the repair scope, parts requirement and service limitations where relevant.\n\nOnce approved, repair or servicing is completed and the unit moves through functional checks before dispatch. Warranty coverage, where available, should be confirmed through the final quotation, invoice or service report.",
+    takeaways: [
+      "Accurate intake details help speed up diagnosis.",
+      "Inspection comes before quotation and repair approval.",
+      "Final testing and clear service documentation complete the repair workflow.",
+    ],
+    seoTitle: "Medical Equipment Repair Intake Process | Arise",
+    seoDescription:
+      "Understand the Arise repair process from request submission and equipment inspection to quotation, repair, testing and dispatch.",
   },
 ];
 
