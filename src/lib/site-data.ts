@@ -16,9 +16,9 @@ import serviceMedicalEquipmentImg from "@/assets/service-medical-equipment.jpg";
 export const settings = {
   company: "Arise Healthcare Solutions",
   tagline: "Precision Endoscopy Repair. Trusted Healthcare Solutions.",
-  phonePlaceholder: "+91 9989967036",
+  phonePlaceholder: "+91 9974086447",
   secondaryPhonePlaceholder: "+91 8530100483",
-  whatsappPlaceholder: "+91 9989967036",
+  whatsappPlaceholder: "+91 9974086447",
   emailPlaceholder: "arisehealthcaresolutions1@gmail.com",
   address: "606/ SAHYOG SPACE NR PANCHAM PUSHPA VILLA NEW ALKAPURI, Vadodara, Gujarat, India",
   hoursPlaceholder: "Mon – Sat · 09:30 to 19:00 IST",
