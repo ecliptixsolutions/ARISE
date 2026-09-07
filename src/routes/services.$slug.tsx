@@ -1,14 +1,11 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { Layout } from "@/components/site/Layout";
-import { ServiceImageCarousel } from "@/components/site/ServiceImageCarousel";
 import { WhatsAppIcon } from "@/components/site/WhatsAppIcon";
 import { getPublicServiceBySlug, getPublicServices } from "@/lib/service-content";
 import { useServicesRealtime } from "@/hooks/useServicesRealtime";
 import {
   findServiceBySlug,
-  getServiceCarouselImages,
   phoneHref,
-  serviceImages,
   settings,
   whatsappHref,
 } from "@/lib/site-data";
@@ -90,15 +87,6 @@ export const Route = createFileRoute("/services/$slug")({
           { property: "og:description", content: loaderData.service.short },
         ]
       : [],
-    links: loaderData
-      ? [
-          {
-            rel: "preload",
-            as: "image",
-            href: getServiceCarouselImages(loaderData.service)[0]?.src ?? serviceImages[0].src,
-          },
-        ]
-      : [],
   }),
   notFoundComponent: () => (
     <Layout>
@@ -124,7 +112,6 @@ export const Route = createFileRoute("/services/$slug")({
 function Page() {
   useServicesRealtime();
   const { service, allServices } = Route.useLoaderData();
-  const images = getServiceCarouselImages(service);
   const requestSearch = { service: service.name } as any;
 
   return (
@@ -141,7 +128,7 @@ function Page() {
           >
             <ArrowLeft className="h-4 w-4" /> Back to Services
           </Link>
-          <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:items-center">
+          <div className="max-w-4xl">
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
                 {service.category}
@@ -149,7 +136,7 @@ function Page() {
               <h1 className="mt-2 font-display text-3xl font-semibold text-navy md:text-4xl lg:text-5xl">
                 {service.name}
               </h1>
-              <p className="mt-4 max-w-xl text-foreground">{service.short}</p>
+              <p className="mt-4 max-w-2xl text-foreground">{service.short}</p>
               <div className="mt-5 flex flex-wrap gap-2">
                 {serviceWhyChoose.slice(0, 4).map(({ title }) => (
                   <span
@@ -176,7 +163,6 @@ function Page() {
                 </a>
               </div>
             </div>
-            <ServiceImageCarousel images={images} />
           </div>
         </div>
       </section>
