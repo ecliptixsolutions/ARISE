@@ -2,8 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   Mail,
-  Phone,
   MapPin,
+  Phone,
   Linkedin,
   Facebook,
   Instagram,
@@ -140,26 +140,6 @@ export function Footer() {
             <ul className="space-y-2.5 mb-6">
               <li>
                 <a
-                  href={phoneHref(settings.phonePlaceholder)}
-                  className="flex items-center gap-2 text-[13px] text-white/50 transition hover:text-[#18b9bb]"
-                  aria-label={`Call ${settings.phonePlaceholder}`}
-                >
-                  <Phone className="h-3.5 w-3.5 shrink-0 text-[#18b9bb]" />
-                  {settings.phonePlaceholder}
-                </a>
-              </li>
-              <li>
-                <a
-                  href={phoneHref(settings.secondaryPhonePlaceholder)}
-                  className="flex items-center gap-2 text-[13px] text-white/50 transition hover:text-[#18b9bb]"
-                  aria-label={`Call ${settings.secondaryPhonePlaceholder}`}
-                >
-                  <Phone className="h-3.5 w-3.5 shrink-0 text-[#18b9bb]" />
-                  {settings.secondaryPhonePlaceholder}
-                </a>
-              </li>
-              <li>
-                <a
                   href={`mailto:${settings.emailPlaceholder}`}
                   className="flex items-start gap-2 text-[13px] text-white/50 transition hover:text-[#18b9bb]"
                   aria-label="Email Arise Healthcare Solutions"
@@ -171,6 +151,16 @@ export function Footer() {
               <li className="flex items-start gap-2 text-[13px] text-white/40">
                 <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#18b9bb]" />
                 <span>Vadodara, Gujarat, India</span>
+              </li>
+              <li>
+                <a
+                  href={phoneHref(settings.phonePlaceholder)}
+                  className="flex items-center gap-2 text-[13px] text-white/50 transition hover:text-[#18b9bb]"
+                  aria-label={`Call ${settings.phonePlaceholder}`}
+                >
+                  <Phone className="h-3.5 w-3.5 shrink-0 text-[#18b9bb]" />
+                  {settings.phonePlaceholder}
+                </a>
               </li>
             </ul>
 
