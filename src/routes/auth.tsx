@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { Layout, PageHero } from "@/components/site/Layout";
-import { supabase } from "@/integrations/supabase/client";
+import { signIn, requestPasswordReset, hasStoredSession } from "@/integrations/mysql/auth";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
@@ -24,9 +24,7 @@ function Page() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) nav({ to: "/admin" });
-    });
+    if (hasStoredSession()) nav({ to: "/admin" });
   }, [nav]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -39,7 +37,7 @@ function Page() {
       return;
     }
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await signIn(email, password);
     setBusy(false);
     if (error) {
       toast.error("Invalid email or password.");
@@ -51,9 +49,7 @@ function Page() {
   async function resetPw() {
     const email = prompt("Enter your email:");
     if (!email) return;
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth`,
-    });
+    const { error } = await requestPasswordReset(email);
     if (error) toast.error("Unable to send reset email. Please try again.");
     else toast.success("If the account exists, a password reset email has been sent.");
   }

@@ -2,7 +2,7 @@
 import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { apiGet, apiPatch } from "@/integrations/mysql/client";
 import { hasPermission } from "@/lib/admin-access";
 
 const statuses = [
@@ -30,22 +30,14 @@ function Page() {
     queryKey: ["admin-order", orderId],
     enabled: canRead,
     queryFn: async () => {
-      const [order, items, events] = await Promise.all([
-        (supabase as any).from("orders").select("*").eq("id", orderId).single(),
-        (supabase as any).from("order_items").select("*").eq("order_id", orderId),
-        (supabase as any)
-          .from("order_events")
-          .select("*")
-          .eq("order_id", orderId)
-          .order("created_at"),
-      ]);
-      if (order.error) throw order.error;
-      return { order: order.data, items: items.data ?? [], events: events.data ?? [] };
+      const { data, error } = await apiGet<any>(`/api/orders/${orderId}`);
+      if (error) throw new Error(error.message);
+      return { order: data, items: data.items ?? [], events: data.events ?? [] };
     },
   });
   async function updateStatus(status: string) {
     if (!canRead) return;
-    const { error } = await (supabase as any).from("orders").update({ status }).eq("id", orderId);
+    const { error } = await apiPatch(`/api/orders/${orderId}`, { status });
     if (error) toast.error(error.message);
     else {
       toast.success("Order updated");

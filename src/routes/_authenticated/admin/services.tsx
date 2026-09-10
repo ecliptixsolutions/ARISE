@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { apiPut } from "@/integrations/mysql/client";
 import { getAdminServices } from "@/lib/service-content";
 import { getServiceCarouselImages, type Service, type ServiceImage } from "@/lib/site-data";
 import { CheckCircle2, ChevronDown, ChevronUp, ExternalLink, GripVertical, Plus, Save, Trash2, Upload, XCircle } from "lucide-react";
@@ -80,16 +80,24 @@ function Page() {
     const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
     const id = crypto.randomUUID();
     const path = `${service.slug}/${id}.${ext}`;
-    const { error } = await supabase.storage.from("service-images").upload(path, file, {
-      cacheControl: "31536000",
-      upsert: false,
-    });
-    if (error) {
-      toast.error("Image upload failed. Check the service-images storage bucket.");
-      return;
+
+    // Upload to Supabase Storage (kept active during transition)
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL_LEGACY ?? "";
+    const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_KEY_LEGACY ?? "";
+    let publicUrlValue = `${SUPABASE_URL}/storage/v1/object/public/service-images/${path}`;
+
+    if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+      const formData = new FormData();
+      formData.append("", file);
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/service-images/${path}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}`, "x-upsert": "false", "Cache-Control": "31536000" },
+        body: formData,
+      });
+      if (!res.ok) { toast.error("Image upload failed."); return; }
     }
-    const { data } = supabase.storage.from("service-images").getPublicUrl(path);
-    const image = { id, src: data.publicUrl, alt, order: service.images.length };
+
+    const image = { id, src: publicUrlValue, alt, order: service.images.length };
     update(service.slug, {
       images: [...service.images, image],
       primaryImageId: service.primaryImageId ?? id,
@@ -106,7 +114,7 @@ function Page() {
       .filter(Boolean);
     const images = service.images.map((image, order) => ({ ...image, order }));
 
-    const { error } = await supabase.from("services").upsert({
+    const { error } = await apiPut(`/api/services/${service.slug}`, {
       slug: service.slug,
       name: service.name,
       category: service.category,
@@ -118,11 +126,11 @@ function Page() {
       is_published: service.published !== false,
       is_featured: service.featured,
       sort_order: index,
-    } as any, { onConflict: "slug" });
+    });
 
     setSaving(null);
     if (error) {
-      toast.error("Could not save service. Apply the latest Supabase migration first.");
+      toast.error("Could not save service.");
       return;
     }
     update(service.slug, { commonProblems: problems, images });

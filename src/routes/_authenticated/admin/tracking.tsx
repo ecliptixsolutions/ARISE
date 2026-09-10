@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createFileRoute, useNavigate, useRouteContext } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Download, Plus, Search, Upload, X } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { apiGet } from "@/integrations/mysql/client";
 import { hasPermission } from "@/lib/admin-access";
 import { locationLabel, repairLocations } from "@/lib/repair-workflow";
 import {
@@ -113,6 +113,8 @@ function Page() {
   const table = auth.isAdmin ? "repair_requests" : "repair_request_public_updates";
   const queryKey = useMemo(() => ["admin-tracking", table], [table]);
 
+  const lastPollRef = useRef<number>(Date.now() - 8000);
+
   const {
     data = [],
     isLoading,
@@ -121,39 +123,29 @@ function Page() {
     queryKey,
     enabled: canRead,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from(table)
-        .select("*")
-        .order("updated_at", { ascending: false })
-        .limit(500);
-      if (error) throw error;
-      return data ?? [];
+      const { data, error } = await apiGet<any[]>("/api/repair-requests");
+      if (error) throw new Error(error.message);
+      return (data ?? []).sort(
+        (a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+      ).slice(0, 500);
     },
   });
 
+  // Polling replaces Supabase realtime
   useEffect(() => {
     if (!canRead) return;
-    const channel = supabase
-      .channel(`admin-tracking-live-${table}`)
-      .on("postgres_changes", { event: "*", schema: "public", table }, (payload) => {
-        qc.setQueryData(queryKey, (current: any[] = []) => {
-          if (payload.eventType === "DELETE") {
-            return current.filter((row) => row.id !== (payload.old as any).id);
-          }
-
-          const next = payload.new as any;
-          const rows = current.filter((row) => row.id !== next.id);
-          return [next, ...rows].sort(
-            (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
-          );
-        });
-      })
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") qc.invalidateQueries({ queryKey });
+    const interval = setInterval(async () => {
+      const since = new Date(lastPollRef.current).toISOString();
+      lastPollRef.current = Date.now();
+      const { data: pollData } = await apiGet<{ changes: any[] }>("/api/poll", {
+        since,
+        tables: table,
       });
-    return () => {
-      void supabase.removeChannel(channel);
-    };
+      if (pollData?.changes?.length) {
+        void qc.invalidateQueries({ queryKey });
+      }
+    }, 8000);
+    return () => clearInterval(interval);
   }, [canRead, qc, queryKey, table]);
 
   const filtered = data.filter((r: any) => {

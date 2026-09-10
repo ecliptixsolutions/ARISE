@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { apiGet, apiPost, apiPatch, apiDelete } from "@/integrations/mysql/client";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Star, Trash2 } from "lucide-react";
@@ -13,13 +13,17 @@ function Page() {
   const qc = useQueryClient();
   const { data = [] } = useQuery({
     queryKey: ["admin-testimonials"],
-    queryFn: async () => (await supabase.from("testimonials").select("*").order("sort_order")).data ?? [],
+    queryFn: async () => {
+      const { data, error } = await apiGet<any[]>("/api/testimonials");
+      if (error) throw new Error(error.message);
+      return (data ?? []).sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    },
   });
   const [form, setForm] = useState({ customer_name: "", organisation: "", city: "", rating: 5, feedback: "" });
 
   async function add() {
     if (!form.customer_name || !form.feedback) { toast.error("Name & feedback required"); return; }
-    const { error } = await supabase.from("testimonials").insert({ ...form, is_sample: false, is_approved: true, sort_order: 99 });
+    const { error } = await apiPost("/api/testimonials", { ...form, is_sample: false, is_approved: true, sort_order: 99 });
     if (error) { toast.error(error.message); return; }
     setForm({ customer_name: "", organisation: "", city: "", rating: 5, feedback: "" });
     qc.invalidateQueries({ queryKey: ["admin-testimonials"] });
@@ -27,12 +31,12 @@ function Page() {
   }
   async function del(id: string) {
     if (!confirm("Delete this testimonial?")) return;
-    const { error } = await supabase.from("testimonials").delete().eq("id", id);
+    const { error } = await apiDelete(`/api/testimonials/${id}`);
     if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: ["admin-testimonials"] });
   }
   async function toggleApproval(id: string, is_approved: boolean) {
-    await supabase.from("testimonials").update({ is_approved: !is_approved }).eq("id", id);
+    await apiPatch(`/api/testimonials/${id}`, { is_approved: !is_approved });
     qc.invalidateQueries({ queryKey: ["admin-testimonials"] });
   }
 

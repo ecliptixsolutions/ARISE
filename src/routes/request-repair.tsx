@@ -2,6 +2,7 @@ import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { Layout, PageHero } from "@/components/site/Layout";
 import { equipmentCategories, equipments, findServiceBySlug, services } from "@/lib/site-data";
 import { createRepairRequest, repairRequestSchema } from "@/lib/repair-requests";
+import { makeBrowserEventId, trackLead } from "@/lib/meta-pixel-client";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -58,6 +59,17 @@ function Page() {
     try {
       const { consent: _consent, ...request } = parsed.data;
       const request_code = await createRepairRequest({ ...request, request_source: "Website" });
+      void trackLead({
+        eventId: makeBrowserEventId("repair-lead"),
+        email: request.email,
+        phone: request.mobile,
+        firstName: request.full_name,
+        city: request.city,
+        state: request.state,
+        externalId: request_code,
+        contentName: request.equipment_name,
+        leadType: "repair_request",
+      });
       setResult({ code: request_code });
       toast.success("Request submitted");
     } catch (error) {

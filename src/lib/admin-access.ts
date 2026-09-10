@@ -63,6 +63,7 @@ export const staffPermissionGroups = [
       ["services", "Services"],
       ["orders", "Orders"],
       ["testimonials", "Testimonials"],
+      ["office_availability", "Office Availability"],
     ],
   },
 ] as const;
@@ -92,7 +93,7 @@ export const adminNavItems: AdminNavItem[] = [
   { to: "/admin/notifications", icon: Bell, label: "Notifications", permission: "notifications" },
   { to: "/admin/testimonials", icon: Star, label: "Testimonials", permission: "testimonials" },
   { to: "/admin/staff", icon: ShieldCheck, label: "Staff", adminOnly: true },
-  { to: "/admin/settings", icon: Settings, label: "Settings", adminOnly: true },
+  { to: "/admin/settings", icon: Settings, label: "Settings", permission: "office_availability" },
 ];
 
 export function canAccessAdminItem(ctx: AdminContext, item: AdminNavItem) {

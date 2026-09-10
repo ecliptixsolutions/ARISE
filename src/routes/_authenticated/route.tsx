@@ -8,52 +8,33 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { LogOut } from "lucide-react";
 import { Logo } from "@/components/site/Logo";
 import { toast } from "sonner";
 import { adminNavItems, canAccessAdminItem } from "@/lib/admin-access";
+import { getUser, signOut, hasStoredSession } from "@/integrations/mysql/auth";
+import { apiGet, apiPatch } from "@/integrations/mysql/client";
+import type { AriseUser } from "@/integrations/mysql/auth";
 
-const seenNotificationToasts = new Set<string>();
-
-function rememberNotificationToast(id: string) {
-  if (seenNotificationToasts.has(id)) return false;
-  seenNotificationToasts.add(id);
-  if (seenNotificationToasts.size > 200) {
-    const first = seenNotificationToasts.values().next().value;
-    if (first) seenNotificationToasts.delete(first);
-  }
-  return true;
-}
+const POLL_INTERVAL_MS = 8000; // 8-second polling for notifications
+const seenToasts = new Set<string>();
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) throw redirect({ to: "/admin/login" });
-    const [{ data: isAdmin }, { data: isStaff }] = await Promise.all([
-      supabase.rpc("has_role", { _user_id: data.user.id, _role: "admin" }),
-      supabase.rpc("has_role", { _user_id: data.user.id, _role: "staff" }),
-    ]);
-    const allowed = Boolean(isAdmin || isStaff);
-    if (!allowed) {
-      await supabase.auth.signOut();
-      throw redirect({ to: "/admin/login", search: { denied: "1" } });
-    }
-    const [{ data: profile }, { data: permissions }] = await Promise.all([
-      (supabase as any).from("profiles").select("is_active").eq("id", data.user.id).maybeSingle(),
-      (supabase as any).from("staff_permissions").select("permission").eq("user_id", data.user.id),
-    ]);
-    if (isStaff && profile?.is_active === false) {
-      await supabase.auth.signOut();
-      throw redirect({ to: "/admin/login", search: { denied: "disabled" } });
-    }
+    // Fast check before network call
+    if (!hasStoredSession()) throw redirect({ to: "/admin/login" });
+
+    const user = await getUser();
+    if (!user) throw redirect({ to: "/admin/login" });
+    if (!["admin", "staff"].includes(user.role)) throw redirect({ to: "/admin/login" });
+
     return {
-      user: data.user,
-      isAdmin: Boolean(isAdmin),
-      isStaff: Boolean(isStaff),
-      permissions: (permissions ?? []).map((p: any) => p.permission),
+      user: { id: user.id, email: user.email } as { id: string; email: string },
+      isAdmin: user.isAdmin,
+      isStaff: user.isStaff,
+      permissions: user.permissions,
     };
   },
   component: Shell,
@@ -65,138 +46,163 @@ function Shell() {
   const qc = useQueryClient();
   const auth = Route.useRouteContext();
   const [unread, setUnread] = useState(0);
+  const lastPollRef = useRef<string>(new Date(Date.now() - 30000).toISOString());
+
   const navItems = useMemo(
-    () => adminNavItems.filter((item) => canAccessAdminItem(auth, item)),
+    () => adminNavItems.filter(item => canAccessAdminItem(auth, item)),
     [auth],
   );
 
+  // Redirect if current route is not accessible
   useEffect(() => {
-    const current = adminNavItems.find((item) =>
+    const current = adminNavItems.find(item =>
       item.exact ? location.pathname === item.to : location.pathname.startsWith(item.to),
     );
     if (current && !canAccessAdminItem(auth, current)) {
-      router.navigate({ to: (navItems[0]?.to ?? "/admin") as any });
+      void router.navigate({ to: (navItems[0]?.to ?? "/admin") as any });
     }
   }, [auth, location.pathname, navItems, router]);
 
+  // Load initial unread count
   useEffect(() => {
-    async function loadUnread() {
-      const { data } = await (supabase as any)
-        .from("notifications")
-        .select("id")
-        .eq("is_read", false);
-      setUnread(data?.length ?? 0);
-    }
-    void loadUnread();
-    function openNotification(notification: any) {
-      const to =
-        notification.related_table === "repair_requests"
-          ? "/admin/repair-requests"
-          : notification.related_table === "enquiries"
-            ? "/admin/enquiries"
-            : "/admin/notifications";
-      router.navigate({ to: to as any });
-    }
-    const channel = supabase
-      .channel("admin-shell-notifications")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "notifications" },
-        (payload) => {
-          void loadUnread();
-          qc.invalidateQueries({ queryKey: ["admin-notifications"] });
+    apiGet<{ count: number }>("/api/notifications/unread-count")
+      .then(({ data }) => { if (data) setUnread(data.count); })
+      .catch(() => {});
+  }, []);
 
-          if (payload.eventType !== "INSERT") return;
-          const notification = payload.new as any;
-          if (!notification?.id || !rememberNotificationToast(notification.id)) return;
-
-          const message =
-            notification.related_table === "repair_requests"
-              ? "New Repair Request Received"
-              : notification.related_table === "enquiries"
-                ? "New Enquiry Received"
-                : notification.title || "New notification";
-
-          toast.info(message, {
-            description: notification.message,
-            duration: 5000,
-            action: {
-              label: "Open",
-              onClick: () => openNotification(notification),
-            },
-          });
-        },
-      )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          void loadUnread();
-          qc.invalidateQueries({ queryKey: ["admin-notifications"] });
-        }
+  // Polling — replaces Supabase realtime for notifications
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const since = lastPollRef.current;
+      const { data } = await apiGet<{
+        changes: Array<{ id: number; table_name: string; row_id: string; operation: string; created_at: string }>;
+        serverTime: string;
+      }>("/api/poll", {
+        since,
+        tables: "notifications,repair_requests,enquiries,office_availability",
       });
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [qc, router]);
-  async function signOut() {
-    await supabase.auth.signOut();
-    router.navigate({ to: "/admin/login" });
+
+      if (!data?.changes?.length) return;
+
+      lastPollRef.current = data.serverTime ?? new Date().toISOString();
+
+      const tables = new Set(data.changes.map(c => c.table_name));
+
+      // Invalidate affected queries
+      if (tables.has("notifications")) {
+        void qc.invalidateQueries({ queryKey: ["admin-notifications"] });
+        void qc.invalidateQueries({ queryKey: ["admin-stats"] });
+
+        // Show toasts for new notification inserts
+        const inserts = data.changes.filter(
+          c => c.table_name === "notifications" && c.operation === "INSERT",
+        );
+        for (const change of inserts) {
+          if (seenToasts.has(change.row_id)) continue;
+          seenToasts.add(change.row_id);
+
+          // Fetch the notification details
+          const { data: notifs } = await apiGet<any[]>("/api/notifications");
+          const notif = notifs?.find((n: any) => n.id === change.row_id);
+          if (notif) {
+            toast.info(
+              notif.related_table === "repair_requests"
+                ? "New Repair Request Received"
+                : notif.related_table === "enquiries"
+                  ? "New Enquiry Received"
+                  : notif.title,
+              { description: notif.message, duration: 5000 },
+            );
+          }
+        }
+
+        // Refresh unread count
+        const { data: countData } = await apiGet<{ count: number }>(
+          "/api/notifications/unread-count",
+        );
+        if (countData) setUnread(countData.count);
+      }
+
+      if (tables.has("repair_requests")) {
+        void qc.invalidateQueries({ queryKey: ["admin-repairs"] });
+        void qc.invalidateQueries({ queryKey: ["admin-tracking"] });
+        void qc.invalidateQueries({ queryKey: ["admin-stats"] });
+      }
+      if (tables.has("enquiries")) {
+        void qc.invalidateQueries({ queryKey: ["admin-enquiries"] });
+        void qc.invalidateQueries({ queryKey: ["admin-stats"] });
+      }
+      if (tables.has("office_availability")) {
+        void qc.invalidateQueries({ queryKey: ["office-availability"] });
+      }
+    }, POLL_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [qc]);
+
+  async function handleLogout() {
+    await signOut();
+    void router.navigate({ to: "/admin/login" });
   }
+
   return (
-    <div className="admin-shell flex min-h-screen bg-surface">
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-border bg-surface lg:block">
-        <div className="flex items-center gap-3 border-b border-border p-4">
-          <Logo size={40} />
-          <div className="min-w-0">
-            <div className="truncate text-sm font-semibold text-navy">Arise Admin</div>
-            <div className="truncate text-xs text-muted-foreground">Healthcare Solutions</div>
-          </div>
+    <div className="flex min-h-screen bg-surface">
+      {/* Sidebar */}
+      <aside className="hidden w-60 flex-col border-r border-border bg-card md:flex">
+        <div className="border-b border-border px-5 py-4">
+          <Logo />
         </div>
-        <nav className="flex flex-col gap-1 p-3 text-sm">
-          {navItems.map(({ to, icon: Icon, label, exact }) => (
-            <Link
-              key={to}
-              to={to as any}
-              activeProps={{ className: "bg-primary text-white shadow-sm" }}
-              activeOptions={{ exact }}
-              className="flex items-center gap-2 rounded-lg px-3 py-2 font-semibold text-foreground hover:bg-white hover:text-primary"
-            >
-              <Icon className="h-4 w-4" /> {label}
-              {to === "/admin/notifications" && unread > 0 && (
-                <span className="ml-auto rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] text-white">
-                  {unread}
-                </span>
-              )}
-            </Link>
-          ))}
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <ul className="space-y-1">
+            {navItems.map(item => {
+              const isActive = item.exact
+                ? location.pathname === item.to
+                : location.pathname.startsWith(item.to);
+              return (
+                <li key={item.to}>
+                  <Link
+                    to={item.to as any}
+                    className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-foreground hover:bg-surface"
+                    }`}
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    <span>{item.label}</span>
+                    {item.to === "/admin/notifications" && unread > 0 && (
+                      <span className="ml-auto rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                        {unread > 99 ? "99+" : unread}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         </nav>
-        <div className="mt-auto p-3">
+        <div className="border-t border-border p-3">
           <button
-            onClick={signOut}
-            className="flex w-full items-center gap-2 rounded-xl border border-border bg-white px-3 py-2 text-sm font-semibold hover:bg-gold-soft"
+            onClick={handleLogout}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground hover:bg-surface"
           >
             <LogOut className="h-4 w-4" /> Sign out
           </button>
-          <Link
-            to="/"
-            className="mt-2 block rounded-md py-2 text-center text-xs text-muted-foreground hover:text-primary"
-          >
-            View website →
-          </Link>
         </div>
       </aside>
-      <div className="flex-1">
-        <header className="flex items-center justify-between border-b border-border bg-white px-4 py-3 shadow-sm lg:hidden">
-          <div className="flex items-center gap-2">
-            <Logo size={32} />
-            <span className="font-semibold text-navy">Admin</span>
-          </div>
-          <button onClick={signOut} className="rounded-md border border-border px-3 py-1.5 text-xs">
-            Sign out
+
+      {/* Main */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Mobile top bar */}
+        <header className="flex items-center justify-between border-b border-border bg-card px-4 py-3 md:hidden">
+          <Logo />
+          <button onClick={handleLogout} aria-label="Sign out">
+            <LogOut className="h-5 w-5 text-muted-foreground" />
           </button>
         </header>
-        <div className="p-4 md:p-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <Outlet />
-        </div>
+        </main>
       </div>
     </div>
   );

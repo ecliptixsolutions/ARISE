@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { handleMetaLead, sendPageView } from "./lib/meta-capi";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -47,9 +48,20 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      if (new URL(request.url).pathname === "/api/meta-capi/lead") {
+        return await handleMetaLead(request, env as Parameters<typeof handleMetaLead>[1]);
+      }
+
+      const pageViewEventId = sendPageView(
+        request,
+        env as Parameters<typeof sendPageView>[1],
+        ctx as Parameters<typeof sendPageView>[2],
+      );
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      const normalized = await normalizeCatastrophicSsrResponse(response);
+      if (pageViewEventId) normalized.headers.append("Set-Cookie", `meta_page_event_id=${pageViewEventId}; Path=/; Max-Age=60; SameSite=Lax; Secure`);
+      return normalized;
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {
