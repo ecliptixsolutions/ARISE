@@ -539,12 +539,37 @@ export function Header() {
                 onMouseLeave={hoverClose}
                 onFocus={() => hoverOpen("equipments")}
                 onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) hoverClose(); }}>
-                <Link to="/equipments"
-                  onClick={(event) => { event.preventDefault(); clickToggle("equipments"); }}
-                  className={itemCls(isEquipActive)}
-                  aria-expanded={dd === "equipments"} aria-haspopup="menu">
-                  Equipment <ChevronDown className="h-3.5 w-3.5" />
-                </Link>
+                <div className={itemCls(isEquipActive)}>
+                  <Link to="/equipments" onClick={() => setDd(null)}>
+                    Equipment
+                  </Link>
+                  <button
+                    type="button"
+                    onPointerDown={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      cancelClose();
+                      setDd("equipments");
+                    }}
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      cancelClose();
+                      setDd("equipments");
+                    }}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      cancelClose();
+                      setDd("equipments");
+                    }}
+                    aria-label="Open Equipment menu"
+                    aria-expanded={dd === "equipments"}
+                    aria-haspopup="menu"
+                    className="-mr-1 p-1"
+                  >
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </button>
+                </div>
                 {dd === "equipments" && (
                   <DropShell className="left-0 w-[480px]" onEnter={cancelClose} onLeave={hoverClose}>
                     <div className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
