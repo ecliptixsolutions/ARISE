@@ -57,7 +57,7 @@ import serviceMedicalImg from "@/assets/service-medical-equipment.jpg";
 import serviceLabTestingImg from "@/assets/service-lab-testing.jpg";
 import serviceOpticalImg from "@/assets/service-optical-inspection.jpg";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { apiGet } from "@/integrations/mysql/client";
 import { useRef, useEffect, useMemo, useState } from "react";
 
 export const Route = createFileRoute("/")({
@@ -87,14 +87,11 @@ function Home() {
   const { data: testimonials = [] } = useQuery({
     queryKey: ["testimonials"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("testimonials")
-        .select("*")
-        .eq("is_approved", true)
-        .eq("is_sample", false)
-        .order("sort_order")
-        .limit(6);
-      return data ?? [];
+      const { data, error } = await apiGet<any[]>("/api/testimonials");
+      if (error) return [];
+      return (data ?? [])
+        .filter((t: any) => t.is_approved && !t.is_sample)
+        .slice(0, 6);
     },
   });
 
@@ -181,7 +178,7 @@ const heroSlides = [
     eyebrow: "Advanced Medical Equipment Support",
     eyebrow2: "Endoscopy Repair  •  Technical Support",
     description:
-      "Arise Healthcare Solutions provides professional repair, servicing and technical support for Olympus endoscopy systems and medical equipment — helping healthcare facilities maintain reliable clinical performance.",
+      "Arise Healthcare Solutions provides professional repair, servicing and technical support for endoscopy systems and medical equipment — helping healthcare facilities maintain reliable clinical performance.",
     image: heroRepairImg,
     primary: { label: "Request Repair", to: "/request-repair" },
     secondary: { label: "Explore Services", to: "/services" },
@@ -572,6 +569,8 @@ function PremiumHeroCarousel() {
             <span>Trusted by Healthcare Facilities Since 2018</span>
             <span className="text-white/35">•</span>
             <span className="text-[#18b9bb]">MSME Registered</span>
+            <span className="text-white/35">•</span>
+            <span className="text-[#18b9bb]">ISO CERTIFIED 9001:2005</span>
           </div>
 
           {/* Main headline — "Complete Repair Solutions For" + dynamic brand */}

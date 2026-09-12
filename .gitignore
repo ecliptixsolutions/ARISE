@@ -32,3 +32,8 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Environment secrets — never commit
+.env
+hostinger-api/.env
+hostinger-api/node_modules

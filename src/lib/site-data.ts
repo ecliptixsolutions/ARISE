@@ -12,6 +12,13 @@ import servicePcbDiagnosisImg from "@/assets/service-pcb-diagnosis.jpg";
 import serviceLabTestingImg from "@/assets/service-lab-testing.jpg";
 import serviceOpticalInspectionImg from "@/assets/service-optical-inspection.jpg";
 import serviceMedicalEquipmentImg from "@/assets/service-medical-equipment.jpg";
+import serviceEndoscopyCardImg from "@/assets/service-endoscopy-card.png";
+import serviceRigidScopeImg from "@/assets/image.png";
+import serviceNephroscopeRepairImg from "@/assets/service-nephroscope-repair.png";
+import serviceEndoscopyRepairImg from "@/assets/service-endoscopy-repair.png";
+import serviceBoardLevelRepairImg from "@/assets/service-board-level-repair.png";
+import serviceProcessorRepairImg from "@/assets/service-processor-repair.png";
+import serviceMedicalMonitorRepairImg from "@/assets/service-medical-monitor-repair.png";
 
 export const settings = {
   company: "Arise Healthcare Solutions",
@@ -166,6 +173,14 @@ export const services: Service[] = [
     name: "Endoscopy Repair",
     category: "Endoscopy",
     featured: true,
+    primaryImageId: "endoscopy-repair",
+    heroImages: [
+      {
+        id: "endoscopy-repair",
+        src: serviceEndoscopyRepairImg,
+        alt: "Flexible endoscope prepared for endoscopy repair",
+      },
+    ],
     short: "Precision repair for rigid and flexible endoscopes at component and board level.",
     description:
       "Comprehensive endoscopy repair covering optics, articulation, seals, working channels and control mechanisms. Every scope is fully tested before dispatch.",
@@ -218,6 +233,14 @@ export const services: Service[] = [
     name: "Flexible Scope Repair",
     category: "Endoscopy",
     featured: true,
+    primaryImageId: "flexible-scope-repair",
+    heroImages: [
+      {
+        id: "flexible-scope-repair",
+        src: endoscopeImg,
+        alt: "Flexible scope prepared for repair",
+      },
+    ],
     short: "Full-service repair for flexible video and fibre endoscopes.",
     description:
       "Flexible scope repair covering CCD/CMOS, angulation wires, insertion tubes and working channels.",
@@ -244,6 +267,14 @@ export const services: Service[] = [
     name: "Nephroscope Repair",
     category: "Urology",
     featured: true,
+    primaryImageId: "nephroscope-repair",
+    heroImages: [
+      {
+        id: "nephroscope-repair",
+        src: serviceNephroscopeRepairImg,
+        alt: "Nephroscope instrument set for repair servicing",
+      },
+    ],
     short:
       "Specialised nephroscope servicing for damaged optics, sheaths, eyepieces, connectors and image-quality problems.",
     description:
@@ -271,6 +302,14 @@ export const services: Service[] = [
     name: "Ureteroscope Repair",
     category: "Urology",
     featured: true,
+    primaryImageId: "ureteroscope-repair",
+    heroImages: [
+      {
+        id: "ureteroscope-repair",
+        src: serviceRigidScopeImg,
+        alt: "Ureteroscope prepared for repair",
+      },
+    ],
     short:
       "Professional repair support for semi-rigid and flexible ureteroscopes with careful handling of delicate internal components.",
     description:
@@ -298,6 +337,14 @@ export const services: Service[] = [
     name: "Cystoscope Repair",
     category: "Urology",
     featured: true,
+    primaryImageId: "cystoscope-repair",
+    heroImages: [
+      {
+        id: "cystoscope-repair",
+        src: serviceEndoscopyCardImg,
+        alt: "Cystoscope repair instruments on a service bench",
+      },
+    ],
     short:
       "Repair and servicing for rigid and flexible cystoscopes used in diagnostic and surgical procedures.",
     description: "Optical, sheath and mechanical repair for cystoscopes across major brands.",
@@ -324,6 +371,14 @@ export const services: Service[] = [
     name: "Laparoscope Repair",
     category: "Endoscopy",
     featured: true,
+    primaryImageId: "laparoscope-repair",
+    heroImages: [
+      {
+        id: "laparoscope-repair",
+        src: serviceEndoscopyCardImg,
+        alt: "Laparoscope repair instruments on a service bench",
+      },
+    ],
     short: "Rod-lens, sheath, eyepiece and image-quality repair for laparoscopic equipment.",
     description:
       "Laparoscopes brought back to sharp image quality and clean autoclavable condition.",
@@ -350,6 +405,14 @@ export const services: Service[] = [
     name: "Arthroscope Repair",
     category: "Endoscopy",
     featured: true,
+    primaryImageId: "arthroscope-repair",
+    heroImages: [
+      {
+        id: "arthroscope-repair",
+        src: serviceEndoscopyCardImg,
+        alt: "Arthroscope repair instruments on a service bench",
+      },
+    ],
     short:
       "Precision repair support for arthroscopes, including optical alignment, lens servicing and sheath restoration.",
     description:
@@ -372,6 +435,14 @@ export const services: Service[] = [
     name: "Camera Head Repair",
     category: "Imaging",
     featured: true,
+    primaryImageId: "camera-head-repair",
+    heroImages: [
+      {
+        id: "camera-head-repair",
+        src: cameraImg,
+        alt: "Medical camera head prepared for repair",
+      },
+    ],
     short: "Component-level repair support for HD, 4K and 3CCD medical camera heads.",
     description:
       "Camera head repair covering CCD/CMOS boards, cable moulds, connectors and buttons.",
@@ -400,6 +471,14 @@ export const services: Service[] = [
     name: "PCB & Board-Level Repair",
     category: "Electronics",
     featured: true,
+    primaryImageId: "pcb-board-level-repair",
+    heroImages: [
+      {
+        id: "pcb-board-level-repair",
+        src: serviceBoardLevelRepairImg,
+        alt: "Medical imaging PCB undergoing board-level repair",
+      },
+    ],
     short:
       "Medical-equipment PCB diagnosis, micro-soldering and electronic component-level repair.",
     description:
@@ -428,6 +507,14 @@ export const services: Service[] = [
     name: "Processor Repair",
     category: "Imaging",
     featured: true,
+    primaryImageId: "processor-repair",
+    heroImages: [
+      {
+        id: "processor-repair",
+        src: serviceProcessorRepairImg,
+        alt: "Processor circuit board for repair",
+      },
+    ],
     short:
       "Repair support for endoscopy and imaging processors with complete functional and signal testing.",
     description: "Processor repair covering video output, connectors, cooling and internal PCBs.",
@@ -455,6 +542,14 @@ export const services: Service[] = [
     name: "Light Source Repair",
     category: "Imaging",
     featured: true,
+    primaryImageId: "light-source-repair",
+    heroImages: [
+      {
+        id: "light-source-repair",
+        src: lightImg,
+        alt: "Medical light source prepared for repair",
+      },
+    ],
     short: "LED and Xenon light source repair.",
     description:
       "Light source repair including lamp module replacement, fan and power supply repair.",
@@ -482,6 +577,14 @@ export const services: Service[] = [
     name: "CO₂ Insufflator Repair",
     category: "Surgical",
     featured: false,
+    primaryImageId: "co2-insufflator-repair",
+    heroImages: [
+      {
+        id: "co2-insufflator-repair",
+        src: co2Img,
+        alt: "CO2 insufflator prepared for repair",
+      },
+    ],
     short: "CO₂ insufflator repair with safety and performance checks.",
     description:
       "Insufflator repair covering pressure regulators, valves, sensors and safety alarms.",
@@ -508,6 +611,14 @@ export const services: Service[] = [
     name: "Medical Monitor Repair",
     category: "Displays",
     featured: false,
+    primaryImageId: "medical-monitor-repair",
+    heroImages: [
+      {
+        id: "medical-monitor-repair",
+        src: serviceMedicalMonitorRepairImg,
+        alt: "Medical monitor displaying patient vitals",
+      },
+    ],
     short:
       "Technical repair support for medical displays and monitors used in endoscopy, surgery and patient monitoring.",
     description: "Panel, power supply and control board repair for medical-grade displays.",
@@ -530,6 +641,14 @@ export const services: Service[] = [
     name: "Diathermy & Electrosurgical Unit Repair",
     category: "Surgical",
     featured: false,
+    primaryImageId: "diathermy-electrosurgical-unit-repair",
+    heroImages: [
+      {
+        id: "diathermy-electrosurgical-unit-repair",
+        src: processorImg,
+        alt: "Electrosurgical unit prepared for repair",
+      },
+    ],
     short:
       "Repair support for electrosurgical and diathermy equipment, including output and control-related faults.",
     description:
@@ -557,6 +676,14 @@ export const services: Service[] = [
     name: "Patient Monitor Repair",
     category: "Diagnostics",
     featured: false,
+    primaryImageId: "patient-monitor-repair",
+    heroImages: [
+      {
+        id: "patient-monitor-repair",
+        src: monitorImg,
+        alt: "Patient monitor prepared for repair",
+      },
+    ],
     short: "Repair and diagnostic support for multiparameter patient-monitoring systems.",
     description:
       "Patient monitor service covering display, sensor-port, alarm, battery, power and communication faults.",
@@ -584,6 +711,14 @@ export const services: Service[] = [
     name: "Ultrasound Equipment Service",
     category: "Diagnostics",
     featured: false,
+    primaryImageId: "ultrasound-equipment-service",
+    heroImages: [
+      {
+        id: "ultrasound-equipment-service",
+        src: processorImg,
+        alt: "Ultrasound equipment processor prepared for service",
+      },
+    ],
     short:
       "Inspection and technical service support for ultrasound equipment and associated components.",
     description:
@@ -611,6 +746,14 @@ export const services: Service[] = [
     name: "Ventilator & Other Medical Equipment Repair",
     category: "General",
     featured: false,
+    primaryImageId: "ventilator-and-other-medical-equipment-repair",
+    heroImages: [
+      {
+        id: "ventilator-and-other-medical-equipment-repair",
+        src: co2Img,
+        alt: "Ventilator and respiratory equipment prepared for repair",
+      },
+    ],
     short:
       "Technical inspection and repair support for supported respiratory, anaesthesia, suction and related medical equipment.",
     description:

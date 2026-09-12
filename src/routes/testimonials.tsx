@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Star } from "lucide-react";
 import { Layout, PageHero } from "@/components/site/Layout";
-import { supabase } from "@/integrations/supabase/client";
+import { apiGet } from "@/integrations/mysql/client";
 
 export const Route = createFileRoute("/testimonials")({
   head: () => ({
@@ -19,15 +19,11 @@ export const Route = createFileRoute("/testimonials")({
 function Page() {
   const { data = [] } = useQuery({
     queryKey: ["all-testimonials"],
-    queryFn: async () =>
-      (
-        await supabase
-          .from("testimonials")
-          .select("*")
-          .eq("is_approved", true)
-          .eq("is_sample", false)
-          .order("sort_order")
-      ).data ?? [],
+    queryFn: async () => {
+      const { data, error } = await apiGet<any[]>("/api/testimonials");
+      if (error) return [];
+      return (data ?? []).filter((t: any) => t.is_approved && !t.is_sample);
+    },
   });
 
   return (

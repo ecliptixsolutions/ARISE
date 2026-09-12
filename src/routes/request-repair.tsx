@@ -1,37 +1,16 @@
 import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { Layout, PageHero } from "@/components/site/Layout";
 import { equipmentCategories, equipments, findServiceBySlug, services } from "@/lib/site-data";
-import { supabase } from "@/integrations/supabase/client";
+import { createRepairRequest, repairRequestSchema } from "@/lib/repair-requests";
+import { makeBrowserEventId, trackLead } from "@/lib/meta-pixel-client";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Copy, ArrowLeft, ArrowRight } from "lucide-react";
 
-const schema = z.object({
-  full_name: z.string().trim().min(2, "Name required").max(120),
-  organisation: z.string().max(200).optional().or(z.literal("")),
-  mobile: z.string().trim().min(7, "Mobile required").max(20),
-  whatsapp: z.string().max(20).optional().or(z.literal("")),
-  email: z.string().trim().email("Valid email required").max(200),
-  city: z.string().max(100).optional().or(z.literal("")),
-  state: z.string().max(100).optional().or(z.literal("")),
-  equipment_category: z.string().max(100).optional().or(z.literal("")),
-  equipment_name: z.string().trim().min(2, "Equipment name required").max(200),
-  brand: z.string().max(100).optional().or(z.literal("")),
-  model_no: z.string().max(100).optional().or(z.literal("")),
-  serial_no: z.string().max(100).optional().or(z.literal("")),
-  problem_description: z.string().trim().min(10, "Please describe the problem").max(2000),
-  urgency: z.enum(["low", "normal", "urgent"]).default("normal"),
-  preferred_contact: z.enum(["phone", "whatsapp", "email"]).default("phone"),
-  pickup_required: z.boolean().default(false),
+const schema = repairRequestSchema.extend({
   consent: z.literal(true, { errorMap: () => ({ message: "Consent required" }) }),
 });
-
-function makeCode() {
-  const y = new Date().getFullYear();
-  const rnd = Math.random().toString(36).slice(2, 7).toUpperCase();
-  return `AR-${y}-${rnd}`;
-}
 
 export const Route = createFileRoute("/request-repair")({
   validateSearch: (s: Record<string, unknown>) =>
@@ -68,33 +47,39 @@ function Page() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const raw: any = Object.fromEntries(fd);
-    raw.pickup_required = raw.pickup_required === "on";
-    raw.consent = raw.consent === "on";
+    const raw = Object.fromEntries(fd) as Record<string, FormDataEntryValue | boolean>;
+    raw.pickup_required = fd.get("pickup_required") === "on";
+    raw.consent = fd.get("consent") === "on";
     const parsed = schema.safeParse(raw);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
       return;
     }
     setSubmitting(true);
-    let request_code = makeCode();
-    let error: any = null;
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      request_code = makeCode();
-      const result = await supabase
-        .from("repair_requests")
-        .insert({ request_code, ...parsed.data });
-      error = result.error;
-      if (!error || error.code !== "23505") break;
-    }
-    setSubmitting(false);
-    if (error) {
+    try {
+      const { consent: _consent, ...request } = parsed.data;
+      const request_code = await createRepairRequest({ ...request, request_source: "Website" });
+      void trackLead({
+        eventId: makeBrowserEventId("repair-lead"),
+        email: request.email,
+        phone: request.mobile,
+        firstName: request.full_name,
+        city: request.city,
+        state: request.state,
+        externalId: request_code,
+        contentName: request.equipment_name,
+        leadType: "repair_request",
+      });
+      setResult({ code: request_code });
+      toast.success("Request submitted");
+    } catch (error) {
       console.error("[Repair request submit failed]", error);
-      toast.error(import.meta.env.DEV ? error.message : "Could not submit. Please try again.");
-      return;
+      const message =
+        error instanceof Error ? error.message : "Could not submit. Please try again.";
+      toast.error(import.meta.env.DEV ? message : "Could not submit. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
-    setResult({ code: request_code });
-    toast.success("Request submitted");
   }
 
   if (result) {
@@ -131,7 +116,7 @@ function Page() {
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 to="/track-repair"
-                search={{ code: result.code } as any}
+                search={{ code: result.code }}
                 className="inline-flex items-center gap-2 rounded-2xl btn-primary px-5 py-3 text-sm font-semibold"
               >
                 Track Request <ArrowRight className="h-4 w-4" />

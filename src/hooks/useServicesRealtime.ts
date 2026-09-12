@@ -1,40 +1,28 @@
+// useServicesRealtime.ts
+// Replaces Supabase realtime subscription for the services table.
+// Uses polling against the change_log endpoint.
 import { useEffect, useRef } from "react";
 import { useRouter } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { apiGet } from "@/integrations/mysql/client";
 
-const REVALIDATION_INTERVAL_MS = 60_000;
+const POLL_MS = 30_000;
 
 export function useServicesRealtime() {
   const router = useRouter();
-  const lastInvalidation = useRef(0);
-  const channelName = useRef(`services-realtime-public-${crypto.randomUUID()}`);
+  const lastPollRef = useRef<number>(Date.now() - POLL_MS);
 
   useEffect(() => {
-    function debouncedInvalidate() {
-      const now = Date.now();
-      if (now - lastInvalidation.current < 2000) return;
-      lastInvalidation.current = now;
-      router.invalidate();
-    }
-
-    const channel = supabase
-      .channel(channelName.current)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "services" },
-        debouncedInvalidate,
-      )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") router.invalidate();
+    const interval = setInterval(async () => {
+      const since = new Date(lastPollRef.current).toISOString();
+      lastPollRef.current = Date.now();
+      const { data } = await apiGet<{ changes: unknown[] }>("/api/poll", {
+        since,
+        tables: "services",
       });
-
-    const interval = window.setInterval(() => {
-      router.invalidate();
-    }, REVALIDATION_INTERVAL_MS);
-
-    return () => {
-      void supabase.removeChannel(channel);
-      window.clearInterval(interval);
-    };
+      if (data?.changes?.length) {
+        void router.invalidate();
+      }
+    }, POLL_MS);
+    return () => clearInterval(interval);
   }, [router]);
 }

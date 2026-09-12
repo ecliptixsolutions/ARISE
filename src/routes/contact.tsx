@@ -23,7 +23,8 @@ import { WhatsAppIcon } from "@/components/site/WhatsAppIcon";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
+import { apiPost } from "@/integrations/mysql/client";
+import { makeBrowserEventId, trackLead } from "@/lib/meta-pixel-client";
 
 /* ─── Validation schema ──────────────────────────────────── */
 const enquirySchema = z.object({
@@ -173,14 +174,20 @@ function ContactPage() {
       return;
     }
     setBusy(true);
-    const { error } = await supabase
-      .from("enquiries")
-      .insert({ ...parsed.data, enquiry_type: "contact_page" });
+    const { error } = await apiPost("/api/enquiries", { ...parsed.data, enquiry_type: "contact_page" });
     setBusy(false);
     if (error) {
       toast.error("Could not send your message. Please try again.");
       return;
     }
+    void trackLead({
+      eventId: makeBrowserEventId("contact-lead"),
+      email: parsed.data.email,
+      phone: parsed.data.mobile,
+      firstName: parsed.data.name,
+      contentName: parsed.data.subject || "Contact enquiry",
+      leadType: "contact_page",
+    });
     (e.target as HTMLFormElement).reset();
     setSubmitted(true);
     toast.success("Message sent. We will get back to you shortly.");

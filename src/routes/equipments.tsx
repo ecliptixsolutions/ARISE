@@ -42,6 +42,23 @@ const broadCategories = [
 ];
 const categoryOptions = [...broadCategories, ...equipmentCategories];
 
+function normaliseTerm(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/co₂/g, "co2")
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function termVariants(value: string) {
+  const normalised = normaliseTerm(value);
+  return new Set([
+    normalised,
+    normalised.endsWith("s") ? normalised.slice(0, -1) : `${normalised}s`,
+  ]);
+}
+
 function Page() {
   const location = useLocation();
   const search = useSearch({ from: "/equipments" });
@@ -54,9 +71,21 @@ function Page() {
   };
 
   const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase();
+    const term = normaliseTerm(q);
+    const variants = termVariants(q);
+    const exactMatches = equipments.filter((e) => {
+      const fields = [e.name, e.category, ...(e.searchTerms ?? [])].map(normaliseTerm);
+      return fields.some((field) => variants.has(field));
+    });
+
+    if (exactMatches.length) return exactMatches;
+
     return equipments.filter((e) => {
-      return !term || `${e.name} ${e.category} ${e.short}`.toLowerCase().includes(term);
+      const haystack = normaliseTerm(`${e.name} ${e.category} ${e.short} ${(e.searchTerms ?? []).join(" ")}`);
+      return (
+        !term ||
+        haystack.includes(term)
+      );
     });
   }, [q]);
 

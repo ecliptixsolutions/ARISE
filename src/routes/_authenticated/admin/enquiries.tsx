@@ -1,55 +1,35 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { apiGet, apiPatch } from "@/integrations/mysql/client";
 import { toast } from "sonner";
-import { useEffect } from "react";
 
-export const Route = createFileRoute("/_authenticated/admin/enquiries")({
-  component: Page,
-});
+export const Route = createFileRoute("/_authenticated/admin/enquiries")({ component: Page });
 
 function Page() {
   const qc = useQueryClient();
   const { data = [] } = useQuery({
     queryKey: ["admin-enquiries"],
-    queryFn: async () => (await supabase.from("enquiries").select("*").order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () => {
+      const { data, error } = await apiGet<any[]>("/api/enquiries");
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+    refetchInterval: 15_000,
   });
-  useEffect(() => {
-    const channel = supabase
-      .channel("admin-enquiries-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "enquiries" }, (payload) => {
-        qc.setQueryData(["admin-enquiries"], (current: any[] = []) => {
-          if (payload.eventType === "DELETE") {
-            return current.filter((row) => row.id !== (payload.old as any).id);
-          }
 
-          const next = payload.new as any;
-          const rows = current.filter((row) => row.id !== next.id);
-          return [next, ...rows].sort(
-            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-          );
-        });
-      })
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          qc.invalidateQueries({ queryKey: ["admin-enquiries"] });
-        }
-      });
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [qc]);
   async function toggleRead(id: string, is_read: boolean) {
-    const { error } = await supabase.from("enquiries").update({ is_read: !is_read }).eq("id", id);
+    const { error } = await apiPatch(`/api/enquiries/${id}`, { is_read: !is_read });
     if (error) { toast.error("Failed"); return; }
-    qc.invalidateQueries({ queryKey: ["admin-enquiries"] });
+    void qc.invalidateQueries({ queryKey: ["admin-enquiries"] });
   }
+
   return (
     <div>
       <h1 className="font-display text-2xl font-bold text-navy">Enquiries</h1>
-      <p className="text-sm text-muted-foreground">{data.length} total</p>
+      <p className="text-sm text-muted-foreground">{(data as any[]).length} total</p>
       <div className="mt-6 space-y-3">
-        {data.map((e: any) => (
+        {(data as any[]).map(e => (
           <div key={e.id} className={`rounded-2xl border p-5 ${e.is_read ? "border-border bg-card" : "border-primary/40 bg-primary/5"}`}>
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -63,7 +43,7 @@ function Page() {
             </div>
           </div>
         ))}
-        {data.length === 0 && <div className="rounded-2xl border border-dashed p-12 text-center text-sm text-muted-foreground">No enquiries yet.</div>}
+        {!(data as any[]).length && <div className="rounded-2xl border border-dashed p-12 text-center text-sm text-muted-foreground">No enquiries yet.</div>}
       </div>
     </div>
   );
