@@ -19,8 +19,6 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-// h3 swallows in-handler throws into a normal 500 Response with body
-// {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
 async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
   if (response.status < 500) return response;
   const contentType = response.headers.get("content-type") ?? "";
@@ -45,12 +43,93 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+function getHostingerEnv(env: unknown): { apiUrl: string; secret: string } {
+  const e = (env ?? {}) as Record<string, string>;
+  const apiUrl =
+    (e.HOSTINGER_API_URL ?? (typeof process !== "undefined" ? (process as any).env?.HOSTINGER_API_URL : "") ?? "").replace(/\/$/, "");
+  const secret = e.ARISE_API_SECRET ?? (typeof process !== "undefined" ? (process as any).env?.ARISE_API_SECRET : "") ?? "";
+  return { apiUrl, secret };
+}
+
+async function proxyToHostinger(request: Request, env: unknown): Promise<Response | null> {
+  const url = new URL(request.url);
+  if (!url.pathname.startsWith("/api/")) return null;
+  if (url.pathname === "/api/meta-capi/lead") return null;
+
+  // Handle CORS preflight for API routes
+  if (request.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": url.origin,
+        "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type,Authorization,x-arise-secret",
+        "Access-Control-Max-Age": "600",
+      },
+    });
+  }
+
+  const { apiUrl, secret } = getHostingerEnv(env);
+  if (!apiUrl) {
+    console.error("[proxy] HOSTINGER_API_URL is not configured in Worker environment");
+    return new Response(JSON.stringify({ error: "API service not configured. Please contact support." }), {
+      status: 503,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  const target = `${apiUrl}${url.pathname}${url.search}`;
+  const headers = new Headers();
+  const ct = request.headers.get("content-type");
+  if (ct) headers.set("content-type", ct);
+  const auth = request.headers.get("authorization");
+  if (auth) headers.set("authorization", auth);
+  // x-arise-secret is a server-side Worker secret — never exposed to browser JS
+  if (secret) headers.set("x-arise-secret", secret);
+  // Forward real client IP for rate-limiting on the backend
+  const cfIp = request.headers.get("cf-connecting-ip");
+  if (cfIp) headers.set("x-forwarded-for", cfIp);
+
+  const method = request.method.toUpperCase();
+  const hasBody = !["GET", "HEAD"].includes(method);
+  let body: ArrayBuffer | undefined;
+  if (hasBody) {
+    try {
+      body = await request.arrayBuffer();
+    } catch {
+      body = undefined;
+    }
+  }
+
+  try {
+    const res = await fetch(target, {
+      method,
+      headers,
+      body: hasBody && body && body.byteLength ? body : undefined,
+    });
+    const resHeaders = new Headers(res.headers);
+    resHeaders.set("x-proxied-by", "cloudflare-worker");
+    // Stream the body back — do not buffer large responses
+    return new Response(res.body, { status: res.status, headers: resHeaders });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[proxy] Failed to reach Hostinger API at ${target}: ${msg}`);
+    return new Response(JSON.stringify({ error: "Unable to reach API service. Please try again shortly." }), {
+      status: 502,
+      headers: { "content-type": "application/json" },
+    });
+  }
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       if (new URL(request.url).pathname === "/api/meta-capi/lead") {
         return await handleMetaLead(request, env as Parameters<typeof handleMetaLead>[1]);
       }
+
+      const proxied = await proxyToHostinger(request, env);
+      if (proxied) return proxied;
 
       const pageViewEventId = sendPageView(
         request,
