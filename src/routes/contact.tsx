@@ -18,6 +18,7 @@ import {
   Settings,
   Zap,
   ChevronRight,
+  RefreshCw,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/site/WhatsAppIcon";
 import { useState } from "react";
@@ -154,6 +155,31 @@ const subjectOptions = [
   "Other",
 ];
 
+/* ─── WhatsApp helper ────────────────────────────────────── */
+function openWhatsAppEnquiry(data: {
+  name: string;
+  organisation?: string;
+  mobile?: string;
+  email: string;
+  subject?: string;
+  message: string;
+}) {
+  const WHATSAPP_NUMBER = "919974086447"; // +91 9974086447
+  const text = [
+    "New Website Enquiry",
+    "",
+    `Name: ${data.name}`,
+    `Company: ${data.organisation || "—"}`,
+    `Phone: ${data.mobile || "—"}`,
+    `Email: ${data.email}`,
+    `Subject: ${data.subject || "—"}`,
+    "Message:",
+    data.message,
+  ].join("\n");
+  const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
 /* ─── Dark card styles (shared) ─────────────────────────── */
 const darkCard = "rounded-[18px] border border-white/10 bg-[#162F42] shadow-lg";
 const darkInput =
@@ -163,23 +189,52 @@ const darkInput =
 function ContactPage() {
   const [busy, setBusy] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submittedData, setSubmittedData] = useState<{
+    name: string;
+    organisation?: string;
+    mobile?: string;
+    email: string;
+    subject?: string;
+    message: string;
+  } | null>(null);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (busy) return;
     const raw = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
+
+    // Client-side validation first
     const parsed = enquirySchema.safeParse(raw);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
       return;
     }
+
     setBusy(true);
-    const { error } = await apiPost("/api/enquiries", { ...parsed.data, enquiry_type: "contact_page" });
+
+    const payload = {
+      ...parsed.data,
+      enquiry_type: "contact_page",
+    };
+
+    const { error } = await apiPost("/api/enquiries", payload);
+
     setBusy(false);
+
     if (error) {
-      toast.error("Could not send your message. Please try again.");
+      // Distinguish between network/service errors and API errors
+      const status = (error as any).status;
+      if (!status || status === 0) {
+        toast.error("Unable to send your enquiry right now. Please check your connection and try again.");
+      } else if (status >= 400 && status < 500) {
+        toast.error(error.message || "Please check your details and try again.");
+      } else {
+        toast.error("Unable to send your enquiry right now. Please try again shortly.");
+      }
       return;
     }
+
+    // Track lead (non-blocking — failure must not affect success flow)
     void trackLead({
       eventId: makeBrowserEventId("contact-lead"),
       email: parsed.data.email,
@@ -187,10 +242,119 @@ function ContactPage() {
       firstName: parsed.data.name,
       contentName: parsed.data.subject || "Contact enquiry",
       leadType: "contact_page",
-    });
+    }).catch(() => {});
+
+    // Store submitted data for the success screen, then show it
+    const saved = {
+      name: parsed.data.name,
+      organisation: parsed.data.organisation,
+      mobile: parsed.data.mobile,
+      email: parsed.data.email,
+      subject: parsed.data.subject,
+      message: parsed.data.message,
+    };
+    setSubmittedData(saved);
     (e.target as HTMLFormElement).reset();
     setSubmitted(true);
-    toast.success("Message sent. We will get back to you shortly.");
+
+    // Open WhatsApp with pre-filled message — only after MySQL save confirmed
+    openWhatsAppEnquiry(saved);
+  }
+
+  // ── Full-page Thank You screen ────────────────────────────
+  if (submitted && submittedData) {
+    return (
+      <Layout>
+        <section className="relative min-h-[80vh] overflow-hidden bg-[#071C2C] flex items-center justify-center">
+          {/* Decorative glows */}
+          <div className="pointer-events-none absolute inset-0" aria-hidden>
+            <div className="absolute -right-32 top-0 h-96 w-96 rounded-full bg-[#18b9bb]/10 blur-[120px]" />
+            <div className="absolute left-0 bottom-0 h-80 w-80 rounded-full bg-blue-500/8 blur-[100px]" />
+            <div className="absolute left-1/2 top-1/3 h-64 w-64 -translate-x-1/2 rounded-full bg-[#18b9bb]/6 blur-[80px]" />
+          </div>
+
+          <div className="container-x relative py-20 text-center">
+            {/* Success icon */}
+            <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-[#18b9bb]/15 ring-2 ring-[#18b9bb]/30 ring-offset-4 ring-offset-[#071C2C]">
+              <CheckCircle2 className="h-12 w-12 text-[#18b9bb]" strokeWidth={1.5} />
+            </div>
+
+            {/* Heading */}
+            <div className="mb-3 text-xs font-bold uppercase tracking-[0.28em] text-[#18b9bb]">
+              Enquiry Received
+            </div>
+            <h1 className="font-display text-4xl font-bold leading-tight text-white md:text-5xl lg:text-6xl">
+              Thank You!
+            </h1>
+            <p className="mx-auto mt-4 max-w-xl text-base text-white/60 md:text-lg">
+              Thank you for contacting{" "}
+              <span className="font-semibold text-white">Arise Healthcare Solutions</span>.
+              <br className="hidden sm:block" />
+              Your enquiry has been submitted successfully.
+            </p>
+            <p className="mx-auto mt-3 max-w-lg text-sm text-white/40">
+              Our team has received your message and will get back to you shortly.
+            </p>
+
+            {/* Submitted summary card */}
+            <div className="mx-auto mt-10 max-w-lg rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-left">
+              <div className="mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-white/35">
+                Enquiry Summary
+              </div>
+              <dl className="space-y-2.5 text-sm">
+                <SummaryRow label="Name" value={submittedData.name} />
+                {submittedData.organisation && (
+                  <SummaryRow label="Company" value={submittedData.organisation} />
+                )}
+                {submittedData.mobile && (
+                  <SummaryRow label="Phone" value={submittedData.mobile} />
+                )}
+                <SummaryRow label="Email" value={submittedData.email} />
+                {submittedData.subject && (
+                  <SummaryRow label="Subject" value={submittedData.subject} />
+                )}
+              </dl>
+            </div>
+
+            {/* WhatsApp note */}
+            <p className="mx-auto mt-6 max-w-md text-sm text-white/35">
+              WhatsApp should have opened with your enquiry pre-filled. If not,{" "}
+              <a
+                href={`https://wa.me/919974086447?text=${encodeURIComponent(
+                  `Hello Arise Healthcare Solutions,\n\nI have submitted an enquiry through the website.\n\nName: ${submittedData.name}\nCompany: ${submittedData.organisation || "—"}\nPhone: ${submittedData.mobile || "—"}\nEmail: ${submittedData.email}\nSubject: ${submittedData.subject || "—"}\n\nMessage:\n${submittedData.message}\n\nPlease get back to me regarding my enquiry.`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#25D366] hover:underline"
+              >
+                tap here to send via WhatsApp
+              </a>
+              .
+            </p>
+
+            {/* Action buttons */}
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+              <Link
+                to="/"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#18b9bb] px-7 py-3.5 text-sm font-semibold text-white transition hover:brightness-110"
+              >
+                Back to Home <ArrowRight className="h-4 w-4" />
+              </Link>
+              <button
+                onClick={() => {
+                  setSubmitted(false);
+                  setSubmittedData(null);
+                }}
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white/80 transition hover:border-white/25 hover:bg-white/10"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Submit Another Enquiry
+              </button>
+            </div>
+          </div>
+        </section>
+      </Layout>
+    );
   }
 
   return (
@@ -316,22 +480,8 @@ function ContactPage() {
                 back to you.
               </p>
 
-              {submitted ? (
-                <div className="mt-8 flex flex-col items-center rounded-2xl bg-white/5 py-12 text-center">
-                  <CheckCircle2 className="h-12 w-12 text-[#18b9bb]" />
-                  <h3 className="mt-4 text-lg font-bold text-white">Message Sent</h3>
-                  <p className="mt-2 text-sm text-white/50">
-                    Thank you for reaching out. Our team will get back to you shortly.
-                  </p>
-                  <button
-                    onClick={() => setSubmitted(false)}
-                    className="mt-6 rounded-2xl border border-[#18b9bb]/40 px-5 py-2.5 text-sm font-semibold text-[#18b9bb] hover:bg-[#18b9bb]/10 transition"
-                  >
-                    Send Another Message
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={onSubmit} className="mt-6 space-y-4" noValidate>
+              {/* Form — always shown here (success is a full-page screen above) */}
+              <form onSubmit={onSubmit} className="mt-6 space-y-4" noValidate>
                   {/* Row 1: Name + Company */}
                   <div className="grid gap-4 sm:grid-cols-2">
                     <DarkField name="name" label="Full Name" required placeholder="Your Name" />
@@ -382,7 +532,6 @@ function ContactPage() {
                     {busy ? "Sending..." : <><Send className="h-4 w-4" /> Send Message</>}
                   </button>
                 </form>
-              )}
             </div>
 
             {/* RIGHT — Map + Info cards */}
@@ -630,5 +779,15 @@ function DarkField({
         className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#18b9bb]/60 focus:ring-2 focus:ring-[#18b9bb]/20 transition"
       />
     </label>
+  );
+}
+
+/* ─── Enquiry summary row ────────────────────────────────── */
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-3">
+      <dt className="w-20 shrink-0 text-white/35">{label}</dt>
+      <dd className="text-white/75 break-words">{value}</dd>
+    </div>
   );
 }
