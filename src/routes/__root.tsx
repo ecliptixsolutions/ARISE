@@ -30,6 +30,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','GTM-NN8J7MWS');`;
 
+// Google Ads global site tag — AW-18443089576
+const googleAdsCode = `window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'AW-18443089576');`;
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -102,11 +108,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       {
         property: "og:title",
-        content: "Arise Healthcare Solutions — Endoscopy Repair & Medical Equipment Servicing",
+        content: "Arise Healthcare Solutions \u2014 Endoscopy Repair & Medical Equipment Servicing",
       },
       {
         name: "twitter:title",
-        content: "Arise Healthcare Solutions — Endoscopy Repair & Medical Equipment Servicing",
+        content: "Arise Healthcare Solutions \u2014 Endoscopy Repair & Medical Equipment Servicing",
       },
       {
         property: "og:description",
@@ -150,6 +156,13 @@ function RootShell({ children }: { children: ReactNode }) {
         {/* Google Tag Manager */}
         <script dangerouslySetInnerHTML={{ __html: googleTagManagerCode }} />
         {/* End Google Tag Manager */}
+        {/* Google Ads (gtag.js) — AW-18443089576 */}
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=AW-18443089576"
+        />
+        <script dangerouslySetInnerHTML={{ __html: googleAdsCode }} />
+        {/* End Google Ads */}
         <HeadContent />
         {/* Meta Pixel Code */}
         <script dangerouslySetInnerHTML={{ __html: metaPixelCode }} />
