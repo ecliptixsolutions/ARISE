@@ -66,13 +66,16 @@ export async function apiGet<T = unknown>(
   params?: Record<string, string>,
 ): Promise<ApiResponse<T>> {
   try {
-    const url = new URL(`${API_URL}${path}`);
+    let url = `${API_URL}${path}`;
     if (params) {
+      const qs = new URLSearchParams();
       for (const [k, v] of Object.entries(params)) {
-        if (v !== undefined && v !== null) url.searchParams.set(k, v);
+        if (v !== undefined && v !== null) qs.set(k, v);
       }
+      const qsStr = qs.toString();
+      if (qsStr) url += `?${qsStr}`;
     }
-    const res = await fetch(url.toString(), {
+    const res = await fetch(url, {
       method: "GET",
       headers: buildHeaders(),
     });

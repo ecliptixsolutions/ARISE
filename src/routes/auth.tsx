@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { PasswordField } from "@/components/ui/PasswordField";
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Admin Sign In — Arise Healthcare Solutions" },
