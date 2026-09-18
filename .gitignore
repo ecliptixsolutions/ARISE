@@ -16,6 +16,13 @@ dist-ssr
 .nitro
 *.local
 
+# Generated/deployment bundles
+hostinger-build/
+hostinger-package/
+Arise-Healthcare-Solutions-Hostinger/
+Hostinger-public_html-ready-*/
+*.zip
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

@@ -7,6 +7,17 @@ import { newId, logChange, insertNotification } from '../helpers.js';
 
 const router = Router();
 
+function str(val, max = 500) {
+  if (val === null || val === undefined) return null;
+  const s = String(val).trim();
+  return s.length ? s.slice(0, max) : null;
+}
+
+function normalizeEmail(val) {
+  const email = str(val, 255);
+  return email ? email.toLowerCase() : null;
+}
+
 // ══════════════════════════════════════════════════════════════
 // SERVICES
 // ══════════════════════════════════════════════════════════════
@@ -96,23 +107,40 @@ router.delete('/testimonials/:id', requireAuth, requirePermission('testimonials'
 // ENQUIRIES
 // ══════════════════════════════════════════════════════════════
 router.post('/enquiries', async (req, res) => {
-  const d = req.body ?? {};
-  if (!d.name || !d.email || !d.message) {
-    return res.status(400).json({ error: 'name, email, message required' });
+  try {
+    const d = req.body ?? {};
+    const name = str(d.name, 120);
+    const email = normalizeEmail(d.email);
+    const message = str(d.message, 2000);
+
+    if (!name || !email || !message) {
+      return res.status(400).json({ error: 'name, email, message required' });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    const id = newId();
+    const mobile = str(d.mobile, 20);
+    const organisation = str(d.organisation, 200);
+    const subject = str(d.subject, 300);
+    const enquiryType = str(d.enquiry_type, 50) || 'general';
+
+    await transaction(async conn => {
+      await conn.execute(
+        `INSERT INTO enquiries (id,name,email,mobile,organisation,subject,message,enquiry_type)
+         VALUES (?,?,?,?,?,?,?,?)`,
+        [id, name, email, mobile, organisation, subject, message, enquiryType],
+      );
+      await insertNotification(conn, 'new_enquiry', 'New Enquiry Received',
+        `${name} submitted an enquiry.`, 'enquiries', id);
+      await logChange(conn, 'enquiries', id, 'INSERT');
+    });
+    return res.status(201).json({ id });
+  } catch (err) {
+    console.error('[enquiry POST]', err.message);
+    return res.status(500).json({ error: 'Could not submit enquiry' });
   }
-  const id = newId();
-  await transaction(async conn => {
-    await conn.execute(
-      `INSERT INTO enquiries (id,name,email,mobile,organisation,subject,message,enquiry_type)
-       VALUES (?,?,?,?,?,?,?,?)`,
-      [id, d.name, d.email, d.mobile || null, d.organisation || null,
-       d.subject || null, d.message, d.enquiry_type || 'general'],
-    );
-    await insertNotification(conn, 'new_enquiry', 'New Enquiry Received',
-      `${d.name} submitted an enquiry.`, 'enquiries', id);
-    await logChange(conn, 'enquiries', id, 'INSERT');
-  });
-  return res.status(201).json({ id });
 });
 
 router.get('/enquiries', requireAuth, requirePermission('enquiries'), async (req, res) => {
