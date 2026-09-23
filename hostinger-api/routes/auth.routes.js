@@ -17,6 +17,7 @@ const loginLimiter = rateLimit({
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
+  skipSuccessfulRequests: true,
   keyGenerator: (req) => {
     const email = String(req.body?.email ?? '').trim().toLowerCase();
     return `${clientMeta(req).ip ?? req.ip}:${email}`;
