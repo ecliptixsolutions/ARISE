@@ -12,25 +12,46 @@ import { newId, nowUtc } from '../helpers.js';
 
 const router = Router();
 
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 60,
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: true,
-  keyGenerator: (req) => {
-    const email = String(req.body?.email ?? '').trim().toLowerCase();
-    return `${clientMeta(req).ip ?? req.ip}:${email}`;
-  },
-  message: { error: 'Too many login attempts. Try again later.' },
-});
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const MAX_FAILED_LOGINS = 10;
+const failedLogins = new Map();
+
+function failedLoginKey(req, email) {
+  return `${clientMeta(req).ip ?? req.ip}:${email}`;
+}
+
+function isLoginBlocked(key) {
+  const entry = failedLogins.get(key);
+  if (!entry) return false;
+  if (Date.now() > entry.resetAt) {
+    failedLogins.delete(key);
+    return false;
+  }
+  return entry.count >= MAX_FAILED_LOGINS;
+}
+
+function recordFailedLogin(key) {
+  const now = Date.now();
+  const entry = failedLogins.get(key);
+  if (!entry || now > entry.resetAt) {
+    failedLogins.set(key, { count: 1, resetAt: now + LOGIN_WINDOW_MS });
+    return;
+  }
+  entry.count += 1;
+}
+
+function clearFailedLogins(key) {
+  failedLogins.delete(key);
+}
 
 // ── POST /api/auth/login ──────────────────────────────────────
-router.post('/login', loginLimiter, async (req, res) => {
+router.post('/login', async (req, res) => {
   const { email, password } = req.body ?? {};
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
 
   const meta = clientMeta(req);
+  const normalizedEmail = email.trim().toLowerCase();
+  const limiterKey = failedLoginKey(req, normalizedEmail);
 
   const [rows] = await query(
     `SELECT u.id, u.email, u.password_hash, u.full_name, u.is_active, ur.role
@@ -38,7 +59,7 @@ router.post('/login', loginLimiter, async (req, res) => {
      LEFT JOIN user_roles ur ON ur.user_id = u.id AND ur.role IN ('admin','staff')
      WHERE u.email = ?
      LIMIT 1`,
-    [email.trim().toLowerCase()],
+    [normalizedEmail],
   );
 
   const user = rows[0];
@@ -51,8 +72,14 @@ router.post('/login', loginLimiter, async (req, res) => {
       'INSERT INTO admin_login_audit (id,email,event_type,success,user_agent,ip_address) VALUES (?,?,?,0,?,?)',
       [auditId, email.slice(0, 255), 'password_login', meta.userAgent, meta.ip],
     ).catch(() => {});
+    if (isLoginBlocked(limiterKey)) {
+      return res.status(429).json({ error: 'Too many failed login attempts. Try again later.' });
+    }
+    recordFailedLogin(limiterKey);
     return res.status(401).json({ error: 'Invalid credentials' });
   }
+
+  clearFailedLogins(limiterKey);
 
   if (!user.is_active) {
     return res.status(403).json({ error: 'Account is disabled' });
