@@ -14,6 +14,8 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'production';
 
+app.set('trust proxy', 1);
+
 // ── Validate critical env vars at startup ─────────────────────
 const REQUIRED = ['MYSQL_HOST','MYSQL_DATABASE','MYSQL_USER','MYSQL_PASSWORD','ARISE_API_SECRET','SESSION_SECRET'];
 const missing = REQUIRED.filter(k => !process.env[k]);

@@ -14,9 +14,13 @@ const router = Router();
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 60,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => {
+    const email = String(req.body?.email ?? '').trim().toLowerCase();
+    return `${clientMeta(req).ip ?? req.ip}:${email}`;
+  },
   message: { error: 'Too many login attempts. Try again later.' },
 });
 
