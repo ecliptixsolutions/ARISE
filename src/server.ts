@@ -61,12 +61,30 @@ async function requireUploadUser(request: Request, env: unknown): Promise<Respon
   }
 
   const { apiUrl, secret } = getHostingerEnv(env);
-  const res = await fetch(`${apiUrl}/api/auth/me`, {
-    headers: {
-      authorization: auth,
-      ...(secret ? { "x-arise-secret": secret } : {}),
-    },
-  });
+  if (!apiUrl) {
+    console.error("[upload] HOSTINGER_API_URL is not configured in Worker environment");
+    return new Response(JSON.stringify({ error: "API service is not configured." }), {
+      status: 503,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${apiUrl}/api/auth/me`, {
+      headers: {
+        authorization: auth,
+        ...(secret ? { "x-arise-secret": secret } : {}),
+      },
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[upload] Failed to validate session: ${msg}`);
+    return new Response(JSON.stringify({ error: "Unable to validate session. Please try again." }), {
+      status: 502,
+      headers: { "content-type": "application/json" },
+    });
+  }
   if (!res.ok) {
     return new Response(JSON.stringify({ error: "Invalid or expired session" }), {
       status: 401,
@@ -114,7 +132,17 @@ async function handleUpload(request: Request, env: unknown): Promise<Response | 
     });
   }
 
-  const formData = await request.formData();
+  let formData: FormData;
+  try {
+    formData = await request.formData();
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[upload] Invalid multipart form data: ${msg}`);
+    return new Response(JSON.stringify({ error: "Invalid image upload request." }), {
+      status: 400,
+      headers: { "content-type": "application/json" },
+    });
+  }
   const file = formData.get("file");
   if (!(file instanceof File)) {
     return new Response(JSON.stringify({ error: "Image file required." }), {
@@ -137,10 +165,19 @@ async function handleUpload(request: Request, env: unknown): Promise<Response | 
 
   const safeName = file.name.toLowerCase().replace(/[^a-z0-9.]+/g, "-");
   const path = `blog-thumbnails/${Date.now()}-${safeName}`;
-  await Promise.all([
-    images.put(path, await file.arrayBuffer()),
-    images.put(`${path}:content-type`, file.type),
-  ]);
+  try {
+    await Promise.all([
+      images.put(path, await file.arrayBuffer()),
+      images.put(`${path}:content-type`, file.type),
+    ]);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[upload] Failed to store blog thumbnail: ${msg}`);
+    return new Response(JSON.stringify({ error: "Unable to store image. Please try again." }), {
+      status: 502,
+      headers: { "content-type": "application/json" },
+    });
+  }
 
   return new Response(JSON.stringify({
     path,
