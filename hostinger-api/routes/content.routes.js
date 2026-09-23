@@ -6,6 +6,29 @@ import { requireAuth, requirePermission, requireAdmin } from '../middleware.js';
 import { newId, logChange, insertNotification } from '../helpers.js';
 
 const router = Router();
+const cache = new Map();
+
+async function cached(key, ttlMs, load) {
+  const hit = cache.get(key);
+  if (hit && Date.now() < hit.expiresAt) return hit.value;
+  const pending = load()
+    .then(value => {
+      cache.set(key, { value, expiresAt: Date.now() + ttlMs });
+      return value;
+    })
+    .catch(err => {
+      cache.delete(key);
+      throw err;
+    });
+  cache.set(key, { value: pending, expiresAt: Date.now() + ttlMs });
+  return pending;
+}
+
+function clearCache(prefix) {
+  for (const key of cache.keys()) {
+    if (key.startsWith(prefix)) cache.delete(key);
+  }
+}
 
 function str(val, max = 500) {
   if (val === null || val === undefined) return null;
@@ -132,16 +155,19 @@ async function upsertBlog(conn, payload) {
 // ══════════════════════════════════════════════════════════════
 router.get('/services', async (req, res) => {
   const isAdmin = req.user?.role === 'admin' || req.user?.role === 'staff';
-  const [rows] = await query(
-    isAdmin
-      ? 'SELECT * FROM services ORDER BY sort_order ASC'
-      : 'SELECT * FROM services WHERE is_published = 1 ORDER BY sort_order ASC',
-  );
-  return res.json(rows.map(r => ({
-    ...r,
-    common_problems: parseJson(r.common_problems, []),
-    carousel_images: parseJson(r.carousel_images, []),
-  })));
+  const rows = await cached(`services:${isAdmin ? 'admin' : 'public'}`, 300_000, async () => {
+    const [rows] = await query(
+      isAdmin
+        ? 'SELECT * FROM services ORDER BY sort_order ASC'
+        : 'SELECT * FROM services WHERE is_published = 1 ORDER BY sort_order ASC',
+    );
+    return rows.map(r => ({
+      ...r,
+      common_problems: parseJson(r.common_problems, []),
+      carousel_images: parseJson(r.carousel_images, []),
+    }));
+  });
+  return res.json(rows);
 });
 
 router.put('/services/:slug', requireAuth, requirePermission('services'), async (req, res) => {
@@ -168,6 +194,8 @@ router.put('/services/:slug', requireAuth, requirePermission('services'), async 
        d.primary_image_id || null, d.is_published ? 1 : 0, d.is_featured ? 1 : 0, d.sort_order ?? 0],
     );
   }
+  clearCache('services:');
+  clearCache('poll:');
   return res.json({ ok: true });
 });
 
@@ -176,11 +204,14 @@ router.put('/services/:slug', requireAuth, requirePermission('services'), async 
 // ══════════════════════════════════════════════════════════════
 router.get('/testimonials', async (req, res) => {
   const isAdmin = req.user?.role === 'admin' || req.user?.role === 'staff';
-  const [rows] = await query(
-    isAdmin
-      ? 'SELECT * FROM testimonials ORDER BY sort_order ASC, created_at DESC'
-      : 'SELECT * FROM testimonials WHERE is_approved=1 ORDER BY sort_order ASC',
-  );
+  const rows = await cached(`testimonials:${isAdmin ? 'admin' : 'public'}`, 300_000, async () => {
+    const [rows] = await query(
+      isAdmin
+        ? 'SELECT * FROM testimonials ORDER BY sort_order ASC, created_at DESC'
+        : 'SELECT * FROM testimonials WHERE is_approved=1 ORDER BY sort_order ASC',
+    );
+    return rows;
+  });
   return res.json(rows);
 });
 
@@ -193,6 +224,7 @@ router.post('/testimonials', requireAuth, requirePermission('testimonials'), asy
     [id, d.customer_name, d.organisation || null, d.city || null, d.rating ?? 5,
      d.feedback, d.is_sample ? 1 : 0, d.is_approved ? 1 : 0, d.is_featured ? 1 : 0, d.sort_order ?? 0],
   );
+  clearCache('testimonials:');
   return res.status(201).json({ id });
 });
 
@@ -204,11 +236,13 @@ router.patch('/testimonials/:id', requireAuth, requirePermission('testimonials')
   if (!Object.keys(updates).length) return res.json({ ok: true });
   const set = Object.keys(updates).map(k => `\`${k}\`=?`).join(',');
   await query(`UPDATE testimonials SET ${set} WHERE id=?`, [...Object.values(updates), req.params.id]);
+  clearCache('testimonials:');
   return res.json({ ok: true });
 });
 
 router.delete('/testimonials/:id', requireAuth, requirePermission('testimonials'), async (req, res) => {
   await query('DELETE FROM testimonials WHERE id=?', [req.params.id]);
+  clearCache('testimonials:');
   return res.json({ ok: true });
 });
 
@@ -245,19 +279,25 @@ router.get('/blogs', async (req, res) => {
     title_za: 'title DESC',
   }[sort] || 'published_at DESC';
 
-  const [countRows] = await query(`SELECT COUNT(*) AS total FROM blogs WHERE ${where.join(' AND ')}`, args);
-  const [rows] = await query(
-    `SELECT * FROM blogs WHERE ${where.join(' AND ')} ORDER BY ${order} LIMIT ? OFFSET ?`,
-    [...args, pageSize, (page - 1) * pageSize],
-  );
-  return res.json({ items: rows.map(blogFromRow), total: countRows[0].total, page, pageSize });
+  const result = await cached(`blogs:${JSON.stringify(req.query)}`, 300_000, async () => {
+    const [countRows] = await query(`SELECT COUNT(*) AS total FROM blogs WHERE ${where.join(' AND ')}`, args);
+    const [rows] = await query(
+      `SELECT * FROM blogs WHERE ${where.join(' AND ')} ORDER BY ${order} LIMIT ? OFFSET ?`,
+      [...args, pageSize, (page - 1) * pageSize],
+    );
+    return { items: rows.map(blogFromRow), total: countRows[0].total, page, pageSize };
+  });
+  return res.json(result);
 });
 
 router.get('/blogs/:slug', async (req, res) => {
-  const [[row]] = await query(
-    'SELECT * FROM blogs WHERE slug=? AND status="published" LIMIT 1',
-    [req.params.slug],
-  );
+  const row = await cached(`blog:${req.params.slug}`, 300_000, async () => {
+    const [[row]] = await query(
+      'SELECT * FROM blogs WHERE slug=? AND status="published" LIMIT 1',
+      [req.params.slug],
+    );
+    return row;
+  });
   if (!row) return res.status(404).json({ error: 'Not found' });
   return res.json(blogFromRow(row));
 });
@@ -319,6 +359,8 @@ router.post('/admin/blogs', requireAuth, requirePermission('blogs'), async (req,
       await upsertBlog(conn, payload);
       await logChange(conn, 'blogs', payload.id, 'INSERT');
     });
+    clearCache('blog');
+    clearCache('poll:');
     return res.status(201).json({ id: payload.id });
   } catch (err) {
     return res.status(err.status || 500).json({ error: err.message || 'Could not create blog' });
@@ -336,6 +378,8 @@ router.patch('/admin/blogs/:id', requireAuth, requirePermission('blogs'), async 
       await upsertBlog(conn, payload);
       await logChange(conn, 'blogs', payload.id, 'UPDATE');
     });
+    clearCache('blog');
+    clearCache('poll:');
     return res.json({ ok: true });
   } catch (err) {
     return res.status(err.status || 500).json({ error: err.message || 'Could not update blog' });
@@ -347,6 +391,8 @@ router.delete('/admin/blogs/:id', requireAuth, requireAdmin, async (req, res) =>
     await conn.execute('DELETE FROM blogs WHERE id=?', [req.params.id]);
     await logChange(conn, 'blogs', req.params.id, 'DELETE');
   });
+  clearCache('blog');
+  clearCache('poll:');
   return res.json({ ok: true });
 });
 
@@ -436,9 +482,12 @@ router.patch('/notifications/read-all', requireAuth, async (req, res) => {
 // OFFICE AVAILABILITY
 // ══════════════════════════════════════════════════════════════
 router.get('/office-availability', async (req, res) => {
-  const [rows] = await query(
-    'SELECT * FROM office_availability ORDER BY starts_at DESC',
-  );
+  const rows = await cached('office-availability', 30_000, async () => {
+    const [rows] = await query(
+      'SELECT * FROM office_availability ORDER BY starts_at DESC',
+    );
+    return rows;
+  });
   return res.json(rows);
 });
 
@@ -453,6 +502,8 @@ router.post('/office-availability', requireAuth, requirePermission('office_avail
      d.reopening_at || null, req.user.userId, req.user.userId],
   );
   await logChange(null, 'office_availability', id, 'INSERT').catch(() => {});
+  clearCache('office-availability');
+  clearCache('poll:');
   return res.status(201).json({ id });
 });
 
@@ -463,11 +514,15 @@ router.patch('/office-availability/:id', requireAuth, requirePermission('office_
   for (const f of fields) if (f in d) updates[f] = d[f] || null;
   const set = Object.keys(updates).map(k => `\`${k}\`=?`).join(',');
   await query(`UPDATE office_availability SET ${set} WHERE id=?`, [...Object.values(updates), req.params.id]);
+  clearCache('office-availability');
+  clearCache('poll:');
   return res.json({ ok: true });
 });
 
 router.delete('/office-availability/:id', requireAuth, requirePermission('office_availability'), async (req, res) => {
   await query('DELETE FROM office_availability WHERE id=?', [req.params.id]);
+  clearCache('office-availability');
+  clearCache('poll:');
   return res.json({ ok: true });
 });
 
@@ -596,19 +651,22 @@ router.get('/poll', async (req, res) => {
   const placeholders = tables.map(() => '?').join(',');
   const sinceFormatted = new Date(since).toISOString().replace('T', ' ').replace('Z', '');
 
-  const [rows] = await query(
-    `SELECT id, table_name, row_id, operation, created_at
-     FROM change_log
-     WHERE table_name IN (${placeholders}) AND created_at > ?
-     ORDER BY created_at ASC
-     LIMIT 100`,
-    [...tables, sinceFormatted],
-  );
-
-  return res.json({
-    changes: rows,
-    serverTime: new Date().toISOString(),
+  const result = await cached(`poll:${tables.join(',')}:${sinceFormatted}`, 5_000, async () => {
+    const [rows] = await query(
+      `SELECT id, table_name, row_id, operation, created_at
+       FROM change_log
+       WHERE table_name IN (${placeholders}) AND created_at > ?
+       ORDER BY created_at ASC
+       LIMIT 100`,
+      [...tables, sinceFormatted],
+    );
+    return {
+      changes: rows,
+      serverTime: new Date().toISOString(),
+    };
   });
+
+  return res.json(result);
 });
 
 // ══════════════════════════════════════════════════════════════
