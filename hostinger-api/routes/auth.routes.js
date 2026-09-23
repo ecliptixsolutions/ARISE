@@ -1,6 +1,5 @@
 // routes/auth.routes.js — login, logout, password reset
 import { Router } from 'express';
-import rateLimit from 'express-rate-limit';
 import { v4 as uuidv4 } from 'uuid';
 import {
   hashPassword, verifyPassword, signToken,
@@ -12,38 +11,6 @@ import { newId, nowUtc } from '../helpers.js';
 
 const router = Router();
 
-const LOGIN_WINDOW_MS = 15 * 60 * 1000;
-const MAX_FAILED_LOGINS = 10;
-const failedLogins = new Map();
-
-function failedLoginKey(req, email) {
-  return `${clientMeta(req).ip ?? req.ip}:${email}`;
-}
-
-function isLoginBlocked(key) {
-  const entry = failedLogins.get(key);
-  if (!entry) return false;
-  if (Date.now() > entry.resetAt) {
-    failedLogins.delete(key);
-    return false;
-  }
-  return entry.count >= MAX_FAILED_LOGINS;
-}
-
-function recordFailedLogin(key) {
-  const now = Date.now();
-  const entry = failedLogins.get(key);
-  if (!entry || now > entry.resetAt) {
-    failedLogins.set(key, { count: 1, resetAt: now + LOGIN_WINDOW_MS });
-    return;
-  }
-  entry.count += 1;
-}
-
-function clearFailedLogins(key) {
-  failedLogins.delete(key);
-}
-
 // ── POST /api/auth/login ──────────────────────────────────────
 router.post('/login', async (req, res) => {
   const { email, password } = req.body ?? {};
@@ -51,7 +18,6 @@ router.post('/login', async (req, res) => {
 
   const meta = clientMeta(req);
   const normalizedEmail = email.trim().toLowerCase();
-  const limiterKey = failedLoginKey(req, normalizedEmail);
 
   const [rows] = await query(
     `SELECT u.id, u.email, u.password_hash, u.full_name, u.is_active, ur.role
@@ -72,14 +38,8 @@ router.post('/login', async (req, res) => {
       'INSERT INTO admin_login_audit (id,email,event_type,success,user_agent,ip_address) VALUES (?,?,?,0,?,?)',
       [auditId, email.slice(0, 255), 'password_login', meta.userAgent, meta.ip],
     ).catch(() => {});
-    if (isLoginBlocked(limiterKey)) {
-      return res.status(429).json({ error: 'Too many failed login attempts. Try again later.' });
-    }
-    recordFailedLogin(limiterKey);
     return res.status(401).json({ error: 'Invalid credentials' });
   }
-
-  clearFailedLogins(limiterKey);
 
   if (!user.is_active) {
     return res.status(403).json({ error: 'Account is disabled' });
@@ -160,8 +120,7 @@ router.get('/me', requireAuth, async (req, res) => {
 });
 
 // ── POST /api/auth/request-password-reset ────────────────────
-const resetLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5 });
-router.post('/request-password-reset', resetLimiter, async (req, res) => {
+router.post('/request-password-reset', async (req, res) => {
   const { email } = req.body ?? {};
   // Always return 200 to avoid user enumeration
   if (!email) return res.json({ ok: true });
@@ -186,7 +145,7 @@ router.post('/request-password-reset', resetLimiter, async (req, res) => {
 });
 
 // ── POST /api/auth/reset-password ────────────────────────────
-router.post('/reset-password', resetLimiter, async (req, res) => {
+router.post('/reset-password', async (req, res) => {
   const { token, password } = req.body ?? {};
   if (!token || !password || password.length < 8) {
     return res.status(400).json({ error: 'Token and password (≥8 chars) required' });
