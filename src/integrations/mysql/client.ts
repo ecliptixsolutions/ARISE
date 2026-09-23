@@ -6,15 +6,12 @@
 //   VITE_HOSTINGER_API_URL — build-time URL only (not a secret). Used by browser JS.
 //   JWT session token — stored in localStorage, sent as Authorization: Bearer header.
 
-// Server-side: HOSTINGER_API_URL from Worker secret (runtime, not baked in)
-// Browser-side: VITE_HOSTINGER_API_URL baked at build time (URL only, no credential)
+// Browser calls should stay same-origin (`/api/...`) so the Cloudflare Worker
+// can add the server-side secret and proxy to Hostinger without CORS issues.
 const API_URL: string =
   (typeof process !== "undefined" && process.env?.HOSTINGER_API_URL
     ? process.env.HOSTINGER_API_URL
-    : null) ??
-  (typeof import.meta !== "undefined"
-    ? ((import.meta as any).env?.VITE_HOSTINGER_API_URL as string | undefined) ?? ""
-    : "");
+    : null) ?? "";
 
 // API_SECRET is ONLY populated server-side (process.env in Cloudflare Worker).
 // In the browser, process.env is undefined — this correctly evaluates to "".
