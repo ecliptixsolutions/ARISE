@@ -328,7 +328,7 @@ function ArticleCard({ blog }: { blog: ManagedBlog }) {
             src={blogImage(blog)}
             alt={blog.imageAlt ?? blog.title}
             loading="lazy"
-            className="h-full w-full object-cover transition group-hover:scale-105"
+            className="h-full w-full object-fill transition group-hover:scale-105"
           />
         )}
       </div>

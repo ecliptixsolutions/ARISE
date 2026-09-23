@@ -211,7 +211,7 @@ function Page() {
               <tr key={blog.id ?? blog.slug}>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    {blog.image ? <img src={blog.image} alt={blog.imageAlt ?? blog.title} className="h-12 w-16 rounded-md object-cover" /> : <div className="h-12 w-16 rounded-md bg-surface" />}
+                    {blog.image ? <img src={blog.image} alt={blog.imageAlt ?? blog.title} className="h-12 w-16 rounded-md object-fill" /> : <div className="h-12 w-16 rounded-md bg-surface" />}
                     <div>
                       <div className="font-semibold text-navy">{blog.title}</div>
                       <div className="text-xs text-muted-foreground">{blog.slug}</div>
@@ -302,7 +302,7 @@ function BlogEditor({ blog, onCancel, onSave }: { blog: ManagedBlog; onCancel: (
         <div className="mt-5 grid gap-5 lg:grid-cols-[220px_1fr]">
           <div>
             <div className="text-sm font-semibold text-navy">Thumbnail</div>
-            {draft.image ? <img src={draft.image} alt={draft.imageAlt ?? draft.title} className="mt-2 aspect-[16/10] w-full rounded-lg object-cover" /> : <div className="mt-2 aspect-[16/10] rounded-lg bg-surface" />}
+            {draft.image ? <img src={draft.image} alt={draft.imageAlt ?? draft.title} className="mt-2 aspect-[16/10] w-full rounded-lg object-fill" /> : <div className="mt-2 aspect-[16/10] rounded-lg bg-surface" />}
           </div>
           <div className="grid gap-4">
             <label className="mt-4 block text-sm font-semibold text-navy">

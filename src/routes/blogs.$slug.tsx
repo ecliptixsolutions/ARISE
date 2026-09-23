@@ -92,11 +92,11 @@ function Page() {
       <PageHero eyebrow={blog.category} title={blog.title} subtitle={blog.excerpt} showBack />
       <article className="container-x mx-auto max-w-5xl py-12">
         {blog.image && (
-          <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+          <div className="aspect-[16/7] overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
             <img
               src={blog.image}
               alt={blog.imageAlt ?? blog.title}
-              className="h-full max-h-[420px] w-full object-cover"
+              className="h-full w-full object-fill"
             />
           </div>
         )}
