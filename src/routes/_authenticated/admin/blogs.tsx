@@ -10,7 +10,7 @@ import {
   type ManagedBlog,
 } from "@/lib/blog-content";
 import { hasPermission } from "@/lib/admin-access";
-import { apiPost } from "@/integrations/mysql/client";
+import { apiPost, getSessionToken } from "@/integrations/mysql/client";
 
 export const Route = createFileRoute("/_authenticated/admin/blogs")({ component: Page });
 
@@ -42,48 +42,35 @@ const fieldClass =
   "w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/15";
 const loadStep = 5;
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL_LEGACY ?? "";
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_KEY_LEGACY ?? "";
 const IMAGE_BUCKET = "admin-images";
-
-function imagePublicUrl(path: string) {
-  return `${SUPABASE_URL}/storage/v1/object/public/${IMAGE_BUCKET}/${path}`;
-}
 
 async function uploadBlogThumbnail(file: File) {
   const valid = ["image/jpeg", "image/png", "image/webp"].includes(file.type);
   if (!valid) throw new Error("Upload JPG, PNG or WEBP files only.");
   if (file.size > 5 * 1024 * 1024) throw new Error("Image must be 5 MB or smaller.");
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new Error("Image upload is not configured.");
 
-  const safeName = file.name.toLowerCase().replace(/[^a-z0-9.]+/g, "-");
-  const path = `blog-thumbnails/${Date.now()}-${safeName}`;
   const formData = new FormData();
-  formData.append("", file);
-
-  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${IMAGE_BUCKET}/${path}`, {
+  formData.append("file", file);
+  const token = getSessionToken();
+  const res = await fetch("/api/uploads/blog-thumbnail", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      "x-upsert": "false",
-      "Cache-Control": "31536000",
-    },
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
   });
 
-  if (!res.ok) throw new Error("Image upload failed.");
+  const json = await res.json() as { path?: string; url?: string; alt?: string; error?: string };
+  if (!res.ok || !json.path || !json.url) throw new Error(json.error ?? "Image upload failed.");
 
-  const url = imagePublicUrl(path);
   const { error } = await apiPost("/api/website-images", {
     bucket: IMAGE_BUCKET,
-    path,
-    url,
-    alt_text: file.name.replace(/\.[^.]+$/, ""),
+    path: json.path,
+    url: json.url,
+    alt_text: json.alt ?? file.name.replace(/\.[^.]+$/, ""),
     category: "blog-thumbnail",
     is_primary: 0,
   });
   if (error) throw new Error(error.message);
-  return { url, alt: file.name.replace(/\.[^.]+$/, "") };
+  return { url: json.url, alt: json.alt ?? file.name.replace(/\.[^.]+$/, "") };
 }
 
 function Page() {

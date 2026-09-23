@@ -21,7 +21,7 @@ const API_SECRET: string =
     ? process.env.ARISE_API_SECRET
     : "";
 
-function getSessionToken(): string | null {
+export function getSessionToken(): string | null {
   if (typeof localStorage === "undefined") return null;
   return localStorage.getItem("arise_session_token");
 }

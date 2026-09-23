@@ -7,7 +7,7 @@
     "api": "npm --prefix hostinger-api start",
     "api:dev": "npm --prefix hostinger-api run dev",
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "vite build && node scripts/patch-worker-config.mjs",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",

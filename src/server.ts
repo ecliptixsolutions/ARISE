@@ -51,6 +51,101 @@ function getHostingerEnv(env: unknown): { apiUrl: string; secret: string } {
   return { apiUrl, secret };
 }
 
+async function requireUploadUser(request: Request, env: unknown): Promise<Response | null> {
+  const auth = request.headers.get("authorization");
+  if (!auth?.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "No token" }), {
+      status: 401,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  const { apiUrl, secret } = getHostingerEnv(env);
+  const res = await fetch(`${apiUrl}/api/auth/me`, {
+    headers: {
+      authorization: auth,
+      ...(secret ? { "x-arise-secret": secret } : {}),
+    },
+  });
+  if (!res.ok) {
+    return new Response(JSON.stringify({ error: "Invalid or expired session" }), {
+      status: 401,
+      headers: { "content-type": "application/json" },
+    });
+  }
+  return null;
+}
+
+async function handleUpload(request: Request, env: unknown): Promise<Response | null> {
+  const url = new URL(request.url);
+  if (url.pathname.startsWith("/uploads/")) {
+    const images = (env as { BLOG_IMAGES?: { get: (key: string, options?: { type: "arrayBuffer" | "text" }) => Promise<ArrayBuffer | string | null> } }).BLOG_IMAGES;
+    if (!images) return new Response("Image storage is not configured.", { status: 503 });
+    const key = url.pathname.slice("/uploads/".length);
+    const [body, contentType] = await Promise.all([
+      images.get(key, { type: "arrayBuffer" }) as Promise<ArrayBuffer | null>,
+      images.get(`${key}:content-type`, { type: "text" }) as Promise<string | null>,
+    ]);
+    if (!body) return new Response("Not found", { status: 404 });
+    return new Response(body, {
+      headers: {
+        "content-type": contentType ?? "application/octet-stream",
+        "cache-control": "public, max-age=31536000, immutable",
+      },
+    });
+  }
+
+  if (url.pathname !== "/api/uploads/blog-thumbnail") return null;
+  if (request.method !== "POST") return new Response("Method not allowed", { status: 405 });
+
+  const authError = await requireUploadUser(request, env);
+  if (authError) return authError;
+
+  const images = (env as { BLOG_IMAGES?: { put: (key: string, value: ArrayBuffer | string) => Promise<unknown> } }).BLOG_IMAGES;
+  if (!images) {
+    return new Response(JSON.stringify({ error: "Image storage is not configured." }), {
+      status: 503,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  const formData = await request.formData();
+  const file = formData.get("file");
+  if (!(file instanceof File)) {
+    return new Response(JSON.stringify({ error: "Image file required." }), {
+      status: 400,
+      headers: { "content-type": "application/json" },
+    });
+  }
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    return new Response(JSON.stringify({ error: "Upload JPG, PNG or WEBP files only." }), {
+      status: 400,
+      headers: { "content-type": "application/json" },
+    });
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    return new Response(JSON.stringify({ error: "Image must be 5 MB or smaller." }), {
+      status: 400,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  const safeName = file.name.toLowerCase().replace(/[^a-z0-9.]+/g, "-");
+  const path = `blog-thumbnails/${Date.now()}-${safeName}`;
+  await Promise.all([
+    images.put(path, await file.arrayBuffer()),
+    images.put(`${path}:content-type`, file.type),
+  ]);
+
+  return new Response(JSON.stringify({
+    path,
+    url: `${url.origin}/uploads/${path}`,
+    alt: file.name.replace(/\.[^.]+$/, ""),
+  }), {
+    headers: { "content-type": "application/json" },
+  });
+}
+
 async function proxyToHostinger(request: Request, env: unknown): Promise<Response | null> {
   const url = new URL(request.url);
   if (!url.pathname.startsWith("/api/")) return null;
@@ -124,6 +219,9 @@ async function proxyToHostinger(request: Request, env: unknown): Promise<Respons
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const uploadResponse = await handleUpload(request, env);
+      if (uploadResponse) return uploadResponse;
+
       if (new URL(request.url).pathname === "/api/meta-capi/lead") {
         return await handleMetaLead(request, env as Parameters<typeof handleMetaLead>[1]);
       }
