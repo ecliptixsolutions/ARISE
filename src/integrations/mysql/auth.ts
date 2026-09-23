@@ -1,6 +1,6 @@
 // src/integrations/mysql/auth.ts
 // Custom auth — replaces all supabase.auth.* calls
-import { apiPost, apiGet, setSessionToken, clearSessionToken } from "./client";
+import { setSessionToken, clearSessionToken } from "./client";
 
 const DIRECT_API_URL = "https://arise-api-bqvq.onrender.com";
 
@@ -26,33 +26,49 @@ export async function signIn(email: string, password: string): Promise<SignInRes
 }
 
 async function directLogin(email: string, password: string) {
+  return directAuthRequest<{ token: string; user: AriseUser }>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+async function directAuthRequest<T>(path: string, init: RequestInit = {}) {
   try {
-    const res = await fetch(`${DIRECT_API_URL}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+    const token = typeof localStorage === "undefined" ? null : localStorage.getItem("arise_session_token");
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(init.headers as Record<string, string> | undefined),
+    };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const res = await fetch(`${DIRECT_API_URL}${path}`, {
+      ...init,
+      headers,
     });
     const json = await res.json();
     if (!res.ok) return { data: null, error: { message: json.error ?? "Request failed", status: res.status } } as const;
-    return { data: json as { token: string; user: AriseUser }, error: null } as const;
+    return { data: json as T, error: null } as const;
   } catch (err) {
     return { data: null, error: { message: err instanceof Error ? err.message : "Network error" } } as const;
   }
 }
 
 export async function signOut(): Promise<void> {
-  await apiPost("/api/auth/logout").catch(() => {});
+  await directAuthRequest("/api/auth/logout", { method: "POST", body: "{}" }).catch(() => {});
   clearSessionToken();
 }
 
 export async function getUser(): Promise<AriseUser | null> {
-  const { data, error } = await apiGet<AriseUser>("/api/auth/me");
+  const { data, error } = await directAuthRequest<AriseUser>("/api/auth/me");
   if (error) return null;
   return data;
 }
 
 export async function requestPasswordReset(email: string): Promise<{ error: string | null }> {
-  const { error } = await apiPost("/api/auth/request-password-reset", { email });
+  const { error } = await directAuthRequest("/api/auth/request-password-reset", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
   return { error: error?.message ?? null };
 }
 
@@ -60,7 +76,10 @@ export async function resetPassword(
   token: string,
   password: string,
 ): Promise<{ error: string | null }> {
-  const { error } = await apiPost("/api/auth/reset-password", { token, password });
+  const { error } = await directAuthRequest("/api/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, password }),
+  });
   return { error: error?.message ?? null };
 }
 
@@ -68,7 +87,10 @@ export async function changePassword(
   currentPassword: string,
   newPassword: string,
 ): Promise<{ error: string | null }> {
-  const { error } = await apiPost("/api/auth/change-password", { currentPassword, newPassword });
+  const { error } = await directAuthRequest("/api/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
   return { error: error?.message ?? null };
 }
 
