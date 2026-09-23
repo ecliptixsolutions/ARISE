@@ -18,6 +18,115 @@ function normalizeEmail(val) {
   return email ? email.toLowerCase() : null;
 }
 
+function intVal(val, fallback = 0) {
+  const n = Number.parseInt(String(val ?? ''), 10);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function jsonArray(val) {
+  return JSON.stringify(Array.isArray(val) ? val : []);
+}
+
+function blogFromRow(r) {
+  return {
+    id: r.id,
+    slug: r.slug,
+    title: r.title,
+    category: r.category,
+    difficulty: r.difficulty,
+    readingTime: r.reading_time,
+    date: r.published_at ? new Date(r.published_at).toISOString().slice(0, 10) : null,
+    excerpt: r.excerpt,
+    image: r.thumbnail_url,
+    imageAlt: r.thumbnail_alt,
+    keywords: parseJson(r.tags, []),
+    equipment: parseJson(r.equipment, []),
+    body: r.content,
+    takeaways: parseJson(r.takeaways, []),
+    seoTitle: r.meta_title,
+    seoDescription: r.meta_description,
+    status: r.status,
+    author: r.author,
+    primaryKeyword: r.primary_keyword,
+    secondaryKeywords: parseJson(r.secondary_keywords, []),
+    canonicalUrl: r.canonical_url,
+    ogImageUrl: r.og_image_url,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+function blogPayload(body, userId, existing = {}) {
+  const d = body ?? {};
+  const title = str(d.title, 255);
+  const slug = str(d.slug, 255);
+  const excerpt = str(d.excerpt, 5000);
+  const content = d.body ?? d.content;
+  if (!title || !slug || !excerpt || !content) {
+    const err = new Error('title, slug, excerpt and content are required');
+    err.status = 400;
+    throw err;
+  }
+
+  const tags = Array.isArray(d.tags) ? d.tags : Array.isArray(d.keywords) ? d.keywords : [];
+  const publishedAt = d.published_at ?? d.publishedAt ?? d.date ?? null;
+  const status = d.status === 'draft' ? 'draft' : 'published';
+  return {
+    id: existing.id ?? newId(),
+    title,
+    slug: slug.toLowerCase(),
+    excerpt,
+    content: String(content),
+    thumbnail_url: d.thumbnail_url ?? d.thumbnailUrl ?? d.image ?? null,
+    thumbnail_alt: str(d.thumbnail_alt ?? d.thumbnailAlt ?? d.imageAlt, 300),
+    category: str(d.category, 100) || 'Repair Insights',
+    difficulty: ['Beginner', 'Intermediate', 'Advanced', 'Expert'].includes(d.difficulty) ? d.difficulty : 'Beginner',
+    reading_time: intVal(d.reading_time ?? d.readingTime, 4),
+    published_at: publishedAt || null,
+    status,
+    author: str(d.author, 120) || 'Arise Healthcare Solutions',
+    primary_keyword: str(d.primary_keyword ?? d.primaryKeyword ?? tags[0], 200),
+    secondary_keywords: jsonArray(d.secondary_keywords ?? d.secondaryKeywords),
+    tags: jsonArray(tags),
+    equipment: jsonArray(d.equipment),
+    takeaways: jsonArray(d.takeaways),
+    meta_title: str(d.meta_title ?? d.metaTitle ?? d.seoTitle, 255),
+    meta_description: d.meta_description ?? d.metaDescription ?? d.seoDescription ?? null,
+    canonical_url: str(d.canonical_url ?? d.canonicalUrl, 500),
+    og_image_url: d.og_image_url ?? d.ogImageUrl ?? d.image ?? null,
+    user_id: userId ?? null,
+  };
+}
+
+async function upsertBlog(conn, payload) {
+  const [result] = await conn.execute(
+    `INSERT INTO blogs
+      (id,title,slug,excerpt,content,thumbnail_url,thumbnail_alt,category,difficulty,reading_time,
+       published_at,status,author,primary_keyword,secondary_keywords,tags,equipment,takeaways,
+       meta_title,meta_description,canonical_url,og_image_url,created_by,updated_by)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+     ON DUPLICATE KEY UPDATE
+       title=VALUES(title),excerpt=VALUES(excerpt),content=VALUES(content),
+       thumbnail_url=VALUES(thumbnail_url),thumbnail_alt=VALUES(thumbnail_alt),
+       category=VALUES(category),difficulty=VALUES(difficulty),reading_time=VALUES(reading_time),
+       published_at=VALUES(published_at),status=VALUES(status),author=VALUES(author),
+       primary_keyword=VALUES(primary_keyword),secondary_keywords=VALUES(secondary_keywords),
+       tags=VALUES(tags),equipment=VALUES(equipment),takeaways=VALUES(takeaways),
+       meta_title=VALUES(meta_title),meta_description=VALUES(meta_description),
+       canonical_url=VALUES(canonical_url),og_image_url=VALUES(og_image_url),
+       updated_by=VALUES(updated_by),updated_at=UTC_TIMESTAMP(6)`,
+    [
+      payload.id, payload.title, payload.slug, payload.excerpt, payload.content,
+      payload.thumbnail_url, payload.thumbnail_alt, payload.category, payload.difficulty,
+      payload.reading_time, payload.published_at, payload.status, payload.author,
+      payload.primary_keyword, payload.secondary_keywords, payload.tags, payload.equipment,
+      payload.takeaways, payload.meta_title, payload.meta_description, payload.canonical_url,
+      payload.og_image_url, payload.user_id, payload.user_id,
+    ],
+  );
+  return result;
+}
+
 // ══════════════════════════════════════════════════════════════
 // SERVICES
 // ══════════════════════════════════════════════════════════════
@@ -100,6 +209,163 @@ router.patch('/testimonials/:id', requireAuth, requirePermission('testimonials')
 
 router.delete('/testimonials/:id', requireAuth, requirePermission('testimonials'), async (req, res) => {
   await query('DELETE FROM testimonials WHERE id=?', [req.params.id]);
+  return res.json({ ok: true });
+});
+
+// ══════════════════════════════════════════════════════════════
+// BLOGS
+// ══════════════════════════════════════════════════════════════
+router.get('/blogs', async (req, res) => {
+  const q = str(req.query.q, 200);
+  const category = str(req.query.category, 100);
+  const difficulty = str(req.query.difficulty, 20);
+  const sort = str(req.query.sort, 40) || 'newest';
+  const page = Math.max(1, intVal(req.query.page, 1));
+  const pageSize = Math.min(50, Math.max(1, intVal(req.query.pageSize, 100)));
+  const where = ['status = ?'];
+  const args = ['published'];
+
+  if (q) {
+    where.push('(title LIKE ? OR slug LIKE ? OR category LIKE ? OR primary_keyword LIKE ? OR JSON_SEARCH(tags, "one", ?) IS NOT NULL)');
+    args.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
+  }
+  if (category && category !== 'All') {
+    where.push('category = ?');
+    args.push(category);
+  }
+  if (difficulty && difficulty !== 'All Levels') {
+    where.push('difficulty = ?');
+    args.push(difficulty);
+  }
+
+  const order = {
+    oldest: 'published_at ASC',
+    updated: 'updated_at DESC',
+    title_az: 'title ASC',
+    title_za: 'title DESC',
+  }[sort] || 'published_at DESC';
+
+  const [countRows] = await query(`SELECT COUNT(*) AS total FROM blogs WHERE ${where.join(' AND ')}`, args);
+  const [rows] = await query(
+    `SELECT * FROM blogs WHERE ${where.join(' AND ')} ORDER BY ${order} LIMIT ? OFFSET ?`,
+    [...args, pageSize, (page - 1) * pageSize],
+  );
+  return res.json({ items: rows.map(blogFromRow), total: countRows[0].total, page, pageSize });
+});
+
+router.get('/blogs/:slug', async (req, res) => {
+  const [[row]] = await query(
+    'SELECT * FROM blogs WHERE slug=? AND status="published" LIMIT 1',
+    [req.params.slug],
+  );
+  if (!row) return res.status(404).json({ error: 'Not found' });
+  return res.json(blogFromRow(row));
+});
+
+router.get('/admin/blogs', requireAuth, requirePermission('blogs'), async (req, res) => {
+  const q = str(req.query.q, 200);
+  const status = str(req.query.status, 20);
+  const category = str(req.query.category, 100);
+  const difficulty = str(req.query.difficulty, 20);
+  const sort = str(req.query.sort, 40) || 'newest';
+  const page = Math.max(1, intVal(req.query.page, 1));
+  const pageSize = Math.min(100, Math.max(1, intVal(req.query.pageSize, 25)));
+  const where = [];
+  const args = [];
+
+  if (q) {
+    where.push('(title LIKE ? OR slug LIKE ? OR category LIKE ? OR primary_keyword LIKE ? OR JSON_SEARCH(tags, "one", ?) IS NOT NULL)');
+    args.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
+  }
+  if (status && status !== 'all') {
+    where.push('status = ?');
+    args.push(status);
+  }
+  if (category && category !== 'All') {
+    where.push('category = ?');
+    args.push(category);
+  }
+  if (difficulty && difficulty !== 'All') {
+    where.push('difficulty = ?');
+    args.push(difficulty);
+  }
+  const sqlWhere = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const order = {
+    oldest: 'published_at ASC',
+    updated: 'updated_at DESC',
+    title_az: 'title ASC',
+    title_za: 'title DESC',
+  }[sort] || 'published_at DESC';
+  const [countRows] = await query(`SELECT COUNT(*) AS total FROM blogs ${sqlWhere}`, args);
+  const [rows] = await query(
+    `SELECT * FROM blogs ${sqlWhere} ORDER BY ${order} LIMIT ? OFFSET ?`,
+    [...args, pageSize, (page - 1) * pageSize],
+  );
+  return res.json({ items: rows.map(blogFromRow), total: countRows[0].total, page, pageSize });
+});
+
+router.post('/admin/blogs/seed', requireAuth, requireAdmin, async (req, res) => {
+  const items = Array.isArray(req.body?.blogs) ? req.body.blogs : [];
+  if (!items.length) return res.status(400).json({ error: 'blogs array required' });
+  let accepted = 0;
+  let inserted = 0;
+  let updated = 0;
+  await transaction(async conn => {
+    for (const item of items) {
+      const payload = blogPayload({ ...item, status: item.status ?? 'published' }, req.user.userId);
+      const result = await upsertBlog(conn, payload);
+      if (result.affectedRows === 1) inserted += 1;
+      if (result.affectedRows === 2) updated += 1;
+      accepted += 1;
+    }
+    await logChange(conn, 'blogs', null, 'UPDATE');
+  });
+  return res.json({ ok: true, accepted, inserted, updated });
+});
+
+router.get('/admin/blogs/:id', requireAuth, requirePermission('blogs'), async (req, res) => {
+  const [[row]] = await query('SELECT * FROM blogs WHERE id=? OR slug=? LIMIT 1', [req.params.id, req.params.id]);
+  if (!row) return res.status(404).json({ error: 'Not found' });
+  return res.json(blogFromRow(row));
+});
+
+router.post('/admin/blogs', requireAuth, requirePermission('blogs'), async (req, res) => {
+  try {
+    const payload = blogPayload(req.body, req.user.userId);
+    const [dupe] = await query('SELECT id FROM blogs WHERE slug=? LIMIT 1', [payload.slug]);
+    if (dupe.length) return res.status(409).json({ error: 'Slug already exists' });
+    await transaction(async conn => {
+      await upsertBlog(conn, payload);
+      await logChange(conn, 'blogs', payload.id, 'INSERT');
+    });
+    return res.status(201).json({ id: payload.id });
+  } catch (err) {
+    return res.status(err.status || 500).json({ error: err.message || 'Could not create blog' });
+  }
+});
+
+router.patch('/admin/blogs/:id', requireAuth, requirePermission('blogs'), async (req, res) => {
+  try {
+    const [[existing]] = await query('SELECT id FROM blogs WHERE id=? LIMIT 1', [req.params.id]);
+    if (!existing) return res.status(404).json({ error: 'Not found' });
+    const payload = blogPayload(req.body, req.user.userId, existing);
+    const [dupe] = await query('SELECT id FROM blogs WHERE slug=? AND id<>? LIMIT 1', [payload.slug, payload.id]);
+    if (dupe.length) return res.status(409).json({ error: 'Slug already exists' });
+    await transaction(async conn => {
+      await upsertBlog(conn, payload);
+      await logChange(conn, 'blogs', payload.id, 'UPDATE');
+    });
+    return res.json({ ok: true });
+  } catch (err) {
+    return res.status(err.status || 500).json({ error: err.message || 'Could not update blog' });
+  }
+});
+
+router.delete('/admin/blogs/:id', requireAuth, requireAdmin, async (req, res) => {
+  await transaction(async conn => {
+    await conn.execute('DELETE FROM blogs WHERE id=?', [req.params.id]);
+    await logChange(conn, 'blogs', req.params.id, 'DELETE');
+  });
   return res.json({ ok: true });
 });
 

@@ -68,6 +68,7 @@ function isPublicPath(method, path) {
   if (method === 'POST' && path === '/repair-requests') return true;
   if (method === 'POST' && path === '/enquiries') return true;
   if (method === 'GET'  && path === '/services') return true;
+  if (method === 'GET'  && (path === '/blogs' || path.startsWith('/blogs/'))) return true;
   if (method === 'GET'  && path === '/testimonials') return true;
   if (method === 'GET'  && path === '/office-availability') return true;
   if (method === 'GET'  && path === '/poll') return true;

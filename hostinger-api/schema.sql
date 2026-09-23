@@ -319,6 +319,45 @@ CREATE TABLE IF NOT EXISTS `testimonials` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
+-- BLOGS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `blogs` (
+  `id`                 CHAR(36)                                      NOT NULL,
+  `title`              VARCHAR(255)                                  NOT NULL,
+  `slug`               VARCHAR(255)                                  NOT NULL,
+  `excerpt`            TEXT                                          NOT NULL,
+  `content`            LONGTEXT                                      NOT NULL,
+  `thumbnail_url`      TEXT                                                   DEFAULT NULL,
+  `thumbnail_alt`      VARCHAR(300)                                           DEFAULT NULL,
+  `category`           VARCHAR(100)                                  NOT NULL DEFAULT 'Repair Insights',
+  `difficulty`         ENUM('Beginner','Intermediate','Advanced','Expert')    DEFAULT 'Beginner',
+  `reading_time`       INT                                           NOT NULL DEFAULT 4,
+  `published_at`       DATETIME(6)                                            DEFAULT NULL,
+  `status`             ENUM('draft','published')                    NOT NULL DEFAULT 'draft',
+  `author`             VARCHAR(120)                                  NOT NULL DEFAULT 'Arise Healthcare Solutions',
+  `primary_keyword`    VARCHAR(200)                                           DEFAULT NULL,
+  `secondary_keywords` JSON                                                   DEFAULT NULL,
+  `tags`               JSON                                                   DEFAULT NULL,
+  `equipment`          JSON                                                   DEFAULT NULL,
+  `takeaways`          JSON                                                   DEFAULT NULL,
+  `meta_title`         VARCHAR(255)                                           DEFAULT NULL,
+  `meta_description`   TEXT                                                   DEFAULT NULL,
+  `canonical_url`      VARCHAR(500)                                           DEFAULT NULL,
+  `og_image_url`       TEXT                                                   DEFAULT NULL,
+  `created_by`         CHAR(36)                                               DEFAULT NULL,
+  `updated_by`         CHAR(36)                                               DEFAULT NULL,
+  `created_at`         DATETIME(6)                                   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_at`         DATETIME(6)                                   NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_blogs_slug` (`slug`),
+  KEY `idx_blogs_status_date` (`status`, `published_at`),
+  KEY `idx_blogs_category` (`category`),
+  KEY `idx_blogs_updated` (`updated_at`),
+  CONSTRAINT `fk_blogs_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_blogs_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
 -- TRACKING
 -- ============================================================
 CREATE TABLE IF NOT EXISTS `tracking` (

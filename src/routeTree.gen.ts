@@ -42,6 +42,7 @@ import { Route as BlogsSlugRouteImport } from './routes/blogs.$slug'
 import { Route as EquipmentsSlugRouteImport } from './routes/equipments.$slug'
 import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
+import { Route as AuthenticatedAdminBlogsRouteImport } from './routes/_authenticated/admin/blogs'
 import { Route as AuthenticatedAdminEnquiriesRouteImport } from './routes/_authenticated/admin/enquiries'
 import { Route as AuthenticatedAdminImagesRouteImport } from './routes/_authenticated/admin/images'
 import { Route as AuthenticatedAdminNotificationsRouteImport } from './routes/_authenticated/admin/notifications'
@@ -220,6 +221,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminBlogsRoute = AuthenticatedAdminBlogsRouteImport.update({
+  id: '/admin/blogs',
+  path: '/admin/blogs',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminEnquiriesRoute =
   AuthenticatedAdminEnquiriesRouteImport.update({
     id: '/admin/enquiries',
@@ -330,6 +336,7 @@ export interface FileRoutesByFullPath {
   '/blogs/$slug': typeof BlogsSlugRoute
   '/equipments/$slug': typeof EquipmentsSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
+  '/admin/blogs': typeof AuthenticatedAdminBlogsRoute
   '/admin/enquiries': typeof AuthenticatedAdminEnquiriesRoute
   '/admin/images': typeof AuthenticatedAdminImagesRoute
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
@@ -377,6 +384,7 @@ export interface FileRoutesByTo {
   '/blogs/$slug': typeof BlogsSlugRoute
   '/equipments/$slug': typeof EquipmentsSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
+  '/admin/blogs': typeof AuthenticatedAdminBlogsRoute
   '/admin/enquiries': typeof AuthenticatedAdminEnquiriesRoute
   '/admin/images': typeof AuthenticatedAdminImagesRoute
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
@@ -426,6 +434,7 @@ export interface FileRoutesById {
   '/blogs/$slug': typeof BlogsSlugRoute
   '/equipments/$slug': typeof EquipmentsSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
+  '/_authenticated/admin/blogs': typeof AuthenticatedAdminBlogsRoute
   '/_authenticated/admin/enquiries': typeof AuthenticatedAdminEnquiriesRoute
   '/_authenticated/admin/images': typeof AuthenticatedAdminImagesRoute
   '/_authenticated/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
@@ -475,6 +484,7 @@ export interface FileRouteTypes {
     | '/blogs/$slug'
     | '/equipments/$slug'
     | '/services/$slug'
+    | '/admin/blogs'
     | '/admin/enquiries'
     | '/admin/images'
     | '/admin/notifications'
@@ -522,6 +532,7 @@ export interface FileRouteTypes {
     | '/blogs/$slug'
     | '/equipments/$slug'
     | '/services/$slug'
+    | '/admin/blogs'
     | '/admin/enquiries'
     | '/admin/images'
     | '/admin/notifications'
@@ -570,6 +581,7 @@ export interface FileRouteTypes {
     | '/blogs/$slug'
     | '/equipments/$slug'
     | '/services/$slug'
+    | '/_authenticated/admin/blogs'
     | '/_authenticated/admin/enquiries'
     | '/_authenticated/admin/images'
     | '/_authenticated/admin/notifications'
@@ -851,6 +863,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/blogs': {
+      id: '/_authenticated/admin/blogs'
+      path: '/admin/blogs'
+      fullPath: '/admin/blogs'
+      preLoaderRoute: typeof AuthenticatedAdminBlogsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/enquiries': {
       id: '/_authenticated/admin/enquiries'
       path: '/admin/enquiries'
@@ -960,6 +979,7 @@ const AuthenticatedAdminOrdersRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminBlogsRoute: typeof AuthenticatedAdminBlogsRoute
   AuthenticatedAdminEnquiriesRoute: typeof AuthenticatedAdminEnquiriesRoute
   AuthenticatedAdminImagesRoute: typeof AuthenticatedAdminImagesRoute
   AuthenticatedAdminNotificationsRoute: typeof AuthenticatedAdminNotificationsRoute
@@ -976,6 +996,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminBlogsRoute: AuthenticatedAdminBlogsRoute,
   AuthenticatedAdminEnquiriesRoute: AuthenticatedAdminEnquiriesRoute,
   AuthenticatedAdminImagesRoute: AuthenticatedAdminImagesRoute,
   AuthenticatedAdminNotificationsRoute: AuthenticatedAdminNotificationsRoute,

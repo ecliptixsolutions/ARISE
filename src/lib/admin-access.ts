@@ -1,5 +1,6 @@
 import {
   Bell,
+  FileText,
   LayoutDashboard,
   MessageSquare,
   Server,
@@ -61,6 +62,7 @@ export const staffPermissionGroups = [
     permissions: [
       ["enquiries", "Enquiries"],
       ["services", "Services"],
+      ["blogs", "Blogs"],
       ["orders", "Orders"],
       ["testimonials", "Testimonials"],
       ["office_availability", "Office Availability"],
@@ -82,6 +84,7 @@ export const adminNavItems: AdminNavItem[] = [
   { to: "/admin", icon: LayoutDashboard, label: "Dashboard", exact: true, permission: "dashboard" },
   { to: "/admin/tracking", icon: Truck, label: "Tracking", permission: "tracking" },
   { to: "/admin/services", icon: Server, label: "Services", permission: "services" },
+  { to: "/admin/blogs", icon: FileText, label: "Blogs", permission: "blogs" },
   {
     to: "/admin/repair-requests",
     icon: Wrench,

@@ -90,6 +90,7 @@ try {
     'repair_requests', 'repair_request_public_updates',
     'repair_status_history', 'repair_request_activity',
     'enquiries', 'notifications', 'services', 'testimonials',
+    'blogs',
     'tracking', 'orders', 'order_items', 'order_events',
     'website_images', 'office_availability', 'change_log',
   ];

@@ -1,13 +1,15 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { Layout, PageHero } from "@/components/site/Layout";
-import { blogs, type Blog, settings } from "@/lib/site-data";
+import { getPublicBlog, getPublicBlogs, type ManagedBlog } from "@/lib/blog-content";
+import { settings } from "@/lib/site-data";
 import { ArrowRight, Calendar, CheckCircle2, Clock, Tag } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/blogs/$slug")({
-  loader: ({ params }) => {
-    const blog = blogs.find((x) => x.slug === params.slug);
-    if (!blog) throw notFound();
-    return blog;
+  loader: async ({ params }) => {
+    const { data, error } = await getPublicBlog(params.slug);
+    if (error || !data) throw notFound();
+    return data;
   },
   head: ({ loaderData }) => ({
     meta: loaderData
@@ -42,8 +44,8 @@ export const Route = createFileRoute("/blogs/$slug")({
   component: Page,
 });
 
-function relatedBlogs(blog: Blog) {
-  const score = (candidate: Blog) => {
+function relatedBlogs(blog: ManagedBlog, blogs: ManagedBlog[]) {
+  const score = (candidate: ManagedBlog) => {
     if (candidate.slug === blog.slug) return -1;
     const sameCategory = candidate.category === blog.category ? 3 : 0;
     const keywordHits = (candidate.keywords ?? []).filter((tag) =>
@@ -63,7 +65,7 @@ function relatedBlogs(blog: Blog) {
     .map((item) => item.candidate);
 }
 
-function blogDate(blog: Blog) {
+function blogDate(blog: ManagedBlog) {
   return blog.date
     ? new Date(blog.date).toLocaleDateString("en-IN", {
         day: "2-digit",
@@ -75,7 +77,15 @@ function blogDate(blog: Blog) {
 
 function Page() {
   const blog = Route.useLoaderData();
-  const related = relatedBlogs(blog);
+  const relatedQuery = useQuery({
+    queryKey: ["related-blogs", blog.slug, blog.category],
+    queryFn: async () => {
+      const { data, error } = await getPublicBlogs({ pageSize: "12", category: blog.category });
+      if (error) throw new Error(error.message);
+      return data.items;
+    },
+  });
+  const related = relatedBlogs(blog, relatedQuery.data ?? []);
 
   return (
     <Layout>

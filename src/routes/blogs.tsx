@@ -7,9 +7,10 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { Layout, PageHero } from "@/components/site/Layout";
-import { blogs, type Blog } from "@/lib/site-data";
+import { getPublicBlogs, type ManagedBlog } from "@/lib/blog-content";
 import { ArrowRight, Calendar, Search, SlidersHorizontal, X } from "lucide-react";
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 
 const pageSize = 9;
@@ -43,11 +44,11 @@ export const Route = createFileRoute("/blogs")({
   component: Page,
 });
 
-function blogImage(blog: Blog) {
-  return blog.image ?? blogs.find((b) => b.image)?.image ?? "";
+function blogImage(blog: ManagedBlog) {
+  return blog.image ?? "";
 }
 
-function blogDate(blog: Blog) {
+function blogDate(blog: ManagedBlog) {
   return blog.date
     ? new Date(blog.date).toLocaleDateString("en-IN", {
         day: "2-digit",
@@ -57,7 +58,7 @@ function blogDate(blog: Blog) {
     : "Arise Guide";
 }
 
-function blogSearchText(blog: Blog) {
+function blogSearchText(blog: ManagedBlog) {
   return [
     blog.title,
     blog.excerpt,
@@ -79,9 +80,24 @@ function Page() {
   const activeCategory = search.category ?? "All";
   const activeLevel = search.level ?? "All Levels";
   const page = search.page ?? 1;
+  const { data, isLoading } = useQuery({
+    queryKey: ["public-blogs", q, activeCategory, activeLevel, page],
+    queryFn: async () => {
+      const { data, error } = await getPublicBlogs({
+        q,
+        category: activeCategory,
+        difficulty: activeLevel,
+        page: String(page),
+        pageSize: String(pageSize),
+      });
+      if (error) throw new Error(error.message);
+      return data;
+    },
+  });
+  const allBlogs = data?.items ?? [];
   const categories = useMemo(
-    () => ["All", ...Array.from(new Set(blogs.map((b) => b.category)))],
-    [],
+    () => ["All", ...Array.from(new Set(allBlogs.map((b) => b.category)))],
+    [allBlogs],
   );
 
   const setSearch = (next: Partial<typeof search>) =>
@@ -98,19 +114,19 @@ function Page() {
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    return blogs.filter((blog) => {
+    return allBlogs.filter((blog) => {
       const categoryMatch = activeCategory === "All" || blog.category === activeCategory;
       const levelMatch = activeLevel === "All Levels" || blog.difficulty === activeLevel;
       const queryMatch = !term || blogSearchText(blog).includes(term);
       return categoryMatch && levelMatch && queryMatch;
     });
-  }, [activeCategory, activeLevel, q]);
+  }, [activeCategory, activeLevel, allBlogs, q]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil((data?.total ?? filtered.length) / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const visibleBlogs = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const visibleBlogs = filtered;
   const avgRead = Math.round(
-    blogs.reduce((sum, b) => sum + (b.readingTime ?? 4), 0) / blogs.length,
+    allBlogs.reduce((sum, b) => sum + (b.readingTime ?? 4), 0) / Math.max(1, allBlogs.length),
   );
   const hasFilters = q || activeCategory !== "All" || activeLevel !== "All Levels";
 
@@ -125,7 +141,7 @@ function Page() {
       />
       <section className="container-x py-12">
         <div className="grid gap-4 md:grid-cols-3">
-          <Stat value={`${blogs.length}`} label="Repair guides" />
+          <Stat value={`${data?.total ?? 0}`} label="Repair guides" />
           <Stat value={`${categories.length - 1}`} label="Technical topics" />
           <Stat value={`${avgRead} min`} label="Average read" />
         </div>
@@ -185,7 +201,11 @@ function Page() {
           </div>
         </div>
 
-        {visibleBlogs.length === 0 ? (
+        {isLoading ? (
+          <div className="mt-8 rounded-2xl border border-border bg-surface p-12 text-center text-sm text-muted-foreground">
+            Loading articles...
+          </div>
+        ) : visibleBlogs.length === 0 ? (
           <div className="mt-8 rounded-2xl border border-dashed border-border bg-surface p-12 text-center">
             <h2 className="font-display text-2xl font-bold text-navy">No articles found</h2>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -295,7 +315,7 @@ function FilterButton({
   );
 }
 
-function ArticleCard({ blog }: { blog: Blog }) {
+function ArticleCard({ blog }: { blog: ManagedBlog }) {
   return (
     <Link
       to="/blogs/$slug"
