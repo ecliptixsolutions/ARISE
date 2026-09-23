@@ -2,6 +2,8 @@
 // Custom auth — replaces all supabase.auth.* calls
 import { apiPost, apiGet, setSessionToken, clearSessionToken } from "./client";
 
+const DIRECT_API_URL = "https://arise-api-bqvq.onrender.com";
+
 export type AriseUser = {
   id: string;
   email: string;
@@ -17,13 +19,31 @@ export type SignInResult =
   | { user: null; token: null; error: string };
 
 export async function signIn(email: string, password: string): Promise<SignInResult> {
-  const { data, error } = await apiPost<{ token: string; user: AriseUser }>("/api/auth/login", {
+  let { data, error } = await apiPost<{ token: string; user: AriseUser }>("/api/auth/login", {
     email,
     password,
   });
+  if (error?.status === 429) {
+    ({ data, error } = await directLogin(email, password));
+  }
   if (error) return { user: null, token: null, error: error.message };
   setSessionToken(data.token);
   return { user: data.user, token: data.token, error: null };
+}
+
+async function directLogin(email: string, password: string) {
+  try {
+    const res = await fetch(`${DIRECT_API_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const json = await res.json();
+    if (!res.ok) return { data: null, error: { message: json.error ?? "Request failed", status: res.status } } as const;
+    return { data: json as { token: string; user: AriseUser }, error: null } as const;
+  } catch (err) {
+    return { data: null, error: { message: err instanceof Error ? err.message : "Network error" } } as const;
+  }
 }
 
 export async function signOut(): Promise<void> {
