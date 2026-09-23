@@ -46,12 +46,11 @@ function StaffPage() {
     }
     setCreating(true);
     try {
-      await createStaffAccount({
-        data: {
-          full_name, email, password, role,
-          permissions: role === "admin" ? [] : accessMode === "full" ? allPermissions : selectedPermissions,
-        },
+      const { error } = await createStaffAccount({
+        full_name, email, password, role,
+        permissions: role === "admin" ? [] : accessMode === "full" ? allPermissions : selectedPermissions,
       });
+      if (error) throw new Error(error.message);
       toast.success(role === "admin" ? "Super Admin account created" : "Staff account created");
       (event.currentTarget as HTMLFormElement).reset();
       setRole("staff"); setAccessMode("selected"); setSelectedPermissions(defaultStaffPermissions);
@@ -81,7 +80,8 @@ function StaffPage() {
     const password = prompt("Temporary password (8+ characters):");
     if (!password) return;
     try {
-      await resetStaffPassword({ data: { user_id: userId, password } });
+      const { error } = await resetStaffPassword({ user_id: userId, password });
+      if (error) throw new Error(error.message);
       toast.success("Password reset");
     } catch (error: any) {
       toast.error(error.message || "Could not reset password");
