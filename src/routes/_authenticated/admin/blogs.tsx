@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Edit, Eye, Plus, RefreshCw, Search, Trash2, Upload } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   deleteAdminBlog,
@@ -40,6 +40,7 @@ const blankBlog: ManagedBlog = {
 
 const fieldClass =
   "w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/15";
+const loadStep = 5;
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL_LEGACY ?? "";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_KEY_LEGACY ?? "";
@@ -94,6 +95,7 @@ function Page() {
   const [difficulty, setDifficulty] = useState("All");
   const [sort, setSort] = useState("newest");
   const [editing, setEditing] = useState<ManagedBlog | null>(null);
+  const [visibleCount, setVisibleCount] = useState(loadStep);
   const canManage = hasPermission(auth, "blogs");
 
   const blogsQuery = useQuery({
@@ -117,6 +119,8 @@ function Page() {
     () => ["All", ...Array.from(new Set((blogsQuery.data?.items ?? []).map((b) => b.category)))],
     [blogsQuery.data?.items],
   );
+
+  useEffect(() => setVisibleCount(loadStep), [q, status, category, difficulty, sort]);
 
   const saveMutation = useMutation({
     mutationFn: async (blog: ManagedBlog) => {
@@ -149,6 +153,8 @@ function Page() {
   }
 
   const blogs = blogsQuery.data?.items ?? [];
+  const visibleBlogs = blogs.slice(0, visibleCount);
+  const remaining = Math.max(0, blogs.length - visibleBlogs.length);
 
   return (
     <div className="space-y-6">
@@ -201,7 +207,7 @@ function Page() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {blogs.map((blog) => (
+            {visibleBlogs.map((blog) => (
               <tr key={blog.id ?? blog.slug}>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
@@ -240,6 +246,18 @@ function Page() {
           </tbody>
         </table>
       </div>
+
+      {remaining > 0 && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => setVisibleCount((count) => count + loadStep)}
+            className="inline-flex items-center gap-2 rounded-lg btn-primary px-5 py-3 text-sm font-semibold"
+          >
+            Load More ({remaining} left)
+          </button>
+        </div>
+      )}
 
       {editing && (
         <BlogEditor
