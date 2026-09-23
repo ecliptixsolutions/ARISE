@@ -61,7 +61,11 @@ export type ApiResponse<T = unknown> =
 async function readJson<T>(res: Response): Promise<T | Record<string, never>> {
   const text = await res.text();
   if (!text) return {};
-  return JSON.parse(text) as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return { error: text.startsWith("<") ? `Request failed with ${res.status}` : text };
+  }
 }
 
 function apiError(json: unknown, status: number) {

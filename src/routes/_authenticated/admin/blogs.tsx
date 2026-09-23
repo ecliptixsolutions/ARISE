@@ -58,7 +58,13 @@ async function uploadBlogThumbnail(file: File) {
     body: formData,
   });
 
-  const json = await res.json() as { path?: string; url?: string; alt?: string; error?: string };
+  const text = await res.text();
+  let json: { path?: string; url?: string; alt?: string; error?: string };
+  try {
+    json = text ? JSON.parse(text) as typeof json : {};
+  } catch {
+    json = { error: text.startsWith("<") ? `Upload endpoint returned ${res.status}` : text };
+  }
   if (!res.ok || !json.path || !json.url) throw new Error(json.error ?? "Image upload failed.");
 
   const { error } = await apiPost("/api/website-images", {

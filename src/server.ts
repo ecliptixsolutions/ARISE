@@ -96,7 +96,12 @@ async function handleUpload(request: Request, env: unknown): Promise<Response | 
   }
 
   if (url.pathname !== "/api/uploads/blog-thumbnail") return null;
-  if (request.method !== "POST") return new Response("Method not allowed", { status: 405 });
+  if (request.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { "content-type": "application/json" },
+    });
+  }
 
   const authError = await requireUploadUser(request, env);
   if (authError) return authError;
