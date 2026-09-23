@@ -9,11 +9,12 @@ import {
 import { Layout, PageHero } from "@/components/site/Layout";
 import { getPublicBlogs, type ManagedBlog } from "@/lib/blog-content";
 import { ArrowRight, Calendar, Search, SlidersHorizontal, X } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 
-const pageSize = 9;
+const pageSize = 100;
+const loadStep = 5;
 const levels = ["Beginner", "Intermediate", "Advanced", "Expert"] as const;
 
 export const Route = createFileRoute("/blogs")({
@@ -79,15 +80,15 @@ function Page() {
   const q = search.q ?? "";
   const activeCategory = search.category ?? "All";
   const activeLevel = search.level ?? "All Levels";
-  const page = search.page ?? 1;
+  const [visibleCount, setVisibleCount] = useState(loadStep);
   const { data, isLoading } = useQuery({
-    queryKey: ["public-blogs", q, activeCategory, activeLevel, page],
+    queryKey: ["public-blogs", q, activeCategory, activeLevel],
     queryFn: async () => {
       const { data, error } = await getPublicBlogs({
         q,
         category: activeCategory,
         difficulty: activeLevel,
-        page: String(page),
+        page: "1",
         pageSize: String(pageSize),
       });
       if (error) throw new Error(error.message);
@@ -122,9 +123,10 @@ function Page() {
     });
   }, [activeCategory, activeLevel, allBlogs, q]);
 
-  const totalPages = Math.max(1, Math.ceil((data?.total ?? filtered.length) / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const visibleBlogs = filtered;
+  useEffect(() => setVisibleCount(loadStep), [q, activeCategory, activeLevel]);
+
+  const visibleBlogs = filtered.slice(0, visibleCount);
+  const remaining = Math.max(0, filtered.length - visibleBlogs.length);
   const avgRead = Math.round(
     allBlogs.reduce((sum, b) => sum + (b.readingTime ?? 4), 0) / Math.max(1, allBlogs.length),
   );
@@ -222,43 +224,24 @@ function Page() {
             )}
           </div>
         ) : (
-          <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {visibleBlogs.map((blog) => (
-              <ArticleCard key={blog.slug} blog={blog} />
-            ))}
-          </div>
-        )}
-
-        {totalPages > 1 && (
-          <nav
-            className="mt-10 flex flex-wrap items-center justify-center gap-2"
-            aria-label="Blog pagination"
-          >
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => navigate({ search: { ...search, page: n }, replace: true })}
-                className={`h-10 min-w-10 rounded-lg border px-3 text-sm font-semibold ${
-                  n === currentPage
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-white text-navy hover:bg-surface"
-                }`}
-              >
-                {n}
-              </button>
-            ))}
-            <button
-              type="button"
-              disabled={currentPage === totalPages}
-              onClick={() =>
-                navigate({ search: { ...search, page: currentPage + 1 }, replace: true })
-              }
-              className="inline-flex h-10 items-center gap-1 rounded-lg border border-border bg-white px-4 text-sm font-semibold text-navy hover:bg-surface disabled:cursor-not-allowed disabled:opacity-45"
-            >
-              Next <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-          </nav>
+          <>
+            <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {visibleBlogs.map((blog) => (
+                <ArticleCard key={blog.slug} blog={blog} />
+              ))}
+            </div>
+            {remaining > 0 && (
+              <div className="mt-10 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((count) => count + loadStep)}
+                  className="inline-flex items-center gap-2 rounded-lg btn-primary px-5 py-3 text-sm font-semibold"
+                >
+                  Load More ({remaining} left)
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         <div className="mt-12 rounded-2xl border border-gold-border/70 bg-gold-soft p-6 md:flex md:items-center md:justify-between">
