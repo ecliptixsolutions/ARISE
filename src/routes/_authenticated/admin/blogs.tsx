@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit, Eye, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
+import { Edit, Eye, Plus, RefreshCw, Search, Trash2, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -10,6 +10,7 @@ import {
   type ManagedBlog,
 } from "@/lib/blog-content";
 import { hasPermission } from "@/lib/admin-access";
+import { apiPost } from "@/integrations/mysql/client";
 
 export const Route = createFileRoute("/_authenticated/admin/blogs")({ component: Page });
 
@@ -39,6 +40,50 @@ const blankBlog: ManagedBlog = {
 
 const fieldClass =
   "w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/15";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL_LEGACY ?? "";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_KEY_LEGACY ?? "";
+const IMAGE_BUCKET = "admin-images";
+
+function imagePublicUrl(path: string) {
+  return `${SUPABASE_URL}/storage/v1/object/public/${IMAGE_BUCKET}/${path}`;
+}
+
+async function uploadBlogThumbnail(file: File) {
+  const valid = ["image/jpeg", "image/png", "image/webp"].includes(file.type);
+  if (!valid) throw new Error("Upload JPG, PNG or WEBP files only.");
+  if (file.size > 5 * 1024 * 1024) throw new Error("Image must be 5 MB or smaller.");
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new Error("Image upload is not configured.");
+
+  const safeName = file.name.toLowerCase().replace(/[^a-z0-9.]+/g, "-");
+  const path = `blog-thumbnails/${Date.now()}-${safeName}`;
+  const formData = new FormData();
+  formData.append("", file);
+
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${IMAGE_BUCKET}/${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      "x-upsert": "false",
+      "Cache-Control": "31536000",
+    },
+    body: formData,
+  });
+
+  if (!res.ok) throw new Error("Image upload failed.");
+
+  const url = imagePublicUrl(path);
+  const { error } = await apiPost("/api/website-images", {
+    bucket: IMAGE_BUCKET,
+    path,
+    url,
+    alt_text: file.name.replace(/\.[^.]+$/, ""),
+    category: "blog-thumbnail",
+    is_primary: 0,
+  });
+  if (error) throw new Error(error.message);
+  return { url, alt: file.name.replace(/\.[^.]+$/, "") };
+}
 
 function Page() {
   const auth = useRouteContext({ from: "/_authenticated" });
@@ -209,6 +254,7 @@ function Page() {
 
 function BlogEditor({ blog, onCancel, onSave }: { blog: ManagedBlog; onCancel: () => void; onSave: (blog: ManagedBlog) => void }) {
   const [draft, setDraft] = useState<ManagedBlog>(blog);
+  const [uploading, setUploading] = useState(false);
   const set = (patch: Partial<ManagedBlog>) => setDraft((current) => ({ ...current, ...patch }));
   const slugify = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const csv = (items?: string[]) => items?.join(", ") ?? "";
@@ -241,7 +287,31 @@ function BlogEditor({ blog, onCancel, onSave }: { blog: ManagedBlog; onCancel: (
             {draft.image ? <img src={draft.image} alt={draft.imageAlt ?? draft.title} className="mt-2 aspect-[16/10] w-full rounded-lg object-cover" /> : <div className="mt-2 aspect-[16/10] rounded-lg bg-surface" />}
           </div>
           <div className="grid gap-4">
-            <Field label="Thumbnail URL"><input value={draft.image ?? ""} onChange={(e) => set({ image: e.target.value })} className={fieldClass} /></Field>
+            <label className="mt-4 block text-sm font-semibold text-navy">
+              <span className="mb-1 block">Upload Thumbnail Image</span>
+              <span className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-semibold hover:bg-surface">
+                <Upload className="h-4 w-4" /> {uploading ? "Uploading..." : draft.image ? "Replace Thumbnail" : "Upload Thumbnail"}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  disabled={uploading}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.currentTarget.value = "";
+                    if (!file) return;
+                    setUploading(true);
+                    uploadBlogThumbnail(file)
+                      .then(({ url, alt }) => {
+                        set({ image: url, ogImageUrl: url, imageAlt: draft.imageAlt || alt });
+                        toast.success("Thumbnail uploaded");
+                      })
+                      .catch((error) => toast.error(error instanceof Error ? error.message : "Image upload failed"))
+                      .finally(() => setUploading(false));
+                  }}
+                />
+              </span>
+            </label>
             <Field label="Thumbnail Alt Text"><input value={draft.imageAlt ?? ""} onChange={(e) => set({ imageAlt: e.target.value })} className={fieldClass} /></Field>
           </div>
         </div>
