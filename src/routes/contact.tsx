@@ -155,31 +155,6 @@ const subjectOptions = [
   "Other",
 ];
 
-/* ─── WhatsApp helper ────────────────────────────────────── */
-function openWhatsAppEnquiry(data: {
-  name: string;
-  organisation?: string;
-  mobile?: string;
-  email: string;
-  subject?: string;
-  message: string;
-}) {
-  const WHATSAPP_NUMBER = "919974086447"; // +91 9974086447
-  const text = [
-    "New Website Enquiry",
-    "",
-    `Name: ${data.name}`,
-    `Company: ${data.organisation || "—"}`,
-    `Phone: ${data.mobile || "—"}`,
-    `Email: ${data.email}`,
-    `Subject: ${data.subject || "—"}`,
-    "Message:",
-    data.message,
-  ].join("\n");
-  const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
-  window.open(url, "_blank", "noopener,noreferrer");
-}
-
 /* ─── Dark card styles (shared) ─────────────────────────── */
 const darkCard = "rounded-[18px] border border-white/10 bg-[#162F42] shadow-lg";
 const darkInput =
@@ -256,9 +231,6 @@ function ContactPage() {
     setSubmittedData(saved);
     (e.target as HTMLFormElement).reset();
     setSubmitted(true);
-
-    // Open WhatsApp with pre-filled message — only after MySQL save confirmed
-    openWhatsAppEnquiry(saved);
   }
 
   // ── Full-page Thank You screen ────────────────────────────
@@ -315,22 +287,6 @@ function ContactPage() {
                 )}
               </dl>
             </div>
-
-            {/* WhatsApp note */}
-            <p className="mx-auto mt-6 max-w-md text-sm text-white/35">
-              WhatsApp should have opened with your enquiry pre-filled. If not,{" "}
-              <a
-                href={`https://wa.me/919974086447?text=${encodeURIComponent(
-                  `Hello Arise Healthcare Solutions,\n\nI have submitted an enquiry through the website.\n\nName: ${submittedData.name}\nCompany: ${submittedData.organisation || "—"}\nPhone: ${submittedData.mobile || "—"}\nEmail: ${submittedData.email}\nSubject: ${submittedData.subject || "—"}\n\nMessage:\n${submittedData.message}\n\nPlease get back to me regarding my enquiry.`
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#25D366] hover:underline"
-              >
-                tap here to send via WhatsApp
-              </a>
-              .
-            </p>
 
             {/* Action buttons */}
             <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
