@@ -1,13 +1,12 @@
 import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calendar, Edit, Eye, Plus, RefreshCw, Search, Trash2, Upload } from "lucide-react";
+import { Edit, Eye, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   deleteAdminBlog,
   getAdminBlogs,
   saveAdminBlog,
-  seedStaticBlogs,
   type ManagedBlog,
 } from "@/lib/blog-content";
 import { hasPermission } from "@/lib/admin-access";
@@ -100,21 +99,6 @@ function Page() {
     },
   });
 
-  const seedMutation = useMutation({
-    mutationFn: async () => {
-      const res = await seedStaticBlogs();
-      if (res.error) throw new Error(res.error.message);
-      return res.data;
-    },
-    onSuccess: (res) => {
-      toast.success(
-        `Seeded ${res?.accepted ?? 0} blogs (${res?.inserted ?? 0} inserted, ${res?.updated ?? 0} updated).`,
-      );
-      void qc.invalidateQueries({ queryKey: ["admin-blogs"] });
-    },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not seed blogs"),
-  });
-
   if (!canManage) {
     return <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground">You do not have permission to manage blogs.</div>;
   }
@@ -129,15 +113,6 @@ function Page() {
           <p className="text-sm text-muted-foreground">{blogsQuery.data?.total ?? 0} blogs in the database</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {auth.isAdmin && (
-            <button
-              type="button"
-              onClick={() => seedMutation.mutate()}
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-white px-3 py-2 text-sm font-semibold hover:bg-surface"
-            >
-              <Upload className="h-4 w-4" /> Seed Existing Blogs
-            </button>
-          )}
           <button
             type="button"
             onClick={() => void blogsQuery.refetch()}
@@ -215,7 +190,7 @@ function Page() {
               </tr>
             ))}
             {!blogsQuery.isLoading && blogs.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No blogs found. Seed existing blogs or add a new one.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No blogs found. Add a new one.</td></tr>
             )}
           </tbody>
         </table>

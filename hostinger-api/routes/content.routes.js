@@ -304,25 +304,6 @@ router.get('/admin/blogs', requireAuth, requirePermission('blogs'), async (req, 
   return res.json({ items: rows.map(blogFromRow), total: countRows[0].total, page, pageSize });
 });
 
-router.post('/admin/blogs/seed', requireAuth, requireAdmin, async (req, res) => {
-  const items = Array.isArray(req.body?.blogs) ? req.body.blogs : [];
-  if (!items.length) return res.status(400).json({ error: 'blogs array required' });
-  let accepted = 0;
-  let inserted = 0;
-  let updated = 0;
-  await transaction(async conn => {
-    for (const item of items) {
-      const payload = blogPayload({ ...item, status: item.status ?? 'published' }, req.user.userId);
-      const result = await upsertBlog(conn, payload);
-      if (result.affectedRows === 1) inserted += 1;
-      if (result.affectedRows === 2) updated += 1;
-      accepted += 1;
-    }
-    await logChange(conn, 'blogs', null, 'UPDATE');
-  });
-  return res.json({ ok: true, accepted, inserted, updated });
-});
-
 router.get('/admin/blogs/:id', requireAuth, requirePermission('blogs'), async (req, res) => {
   const [[row]] = await query('SELECT * FROM blogs WHERE id=? OR slug=? LIMIT 1', [req.params.id, req.params.id]);
   if (!row) return res.status(404).json({ error: 'Not found' });

@@ -58,6 +58,20 @@ export type ApiResponse<T = unknown> =
   | { data: T; error: null }
   | { data: null; error: { message: string; status?: number } };
 
+async function readJson<T>(res: Response): Promise<T | Record<string, never>> {
+  const text = await res.text();
+  if (!text) return {};
+  return JSON.parse(text) as T;
+}
+
+function apiError(json: unknown, status: number) {
+  const message =
+    json && typeof json === "object" && "error" in json && typeof json.error === "string"
+      ? json.error
+      : "Request failed";
+  return { data: null, error: { message, status } } as const;
+}
+
 export async function apiGet<T = unknown>(
   path: string,
   params?: Record<string, string>,
@@ -76,8 +90,8 @@ export async function apiGet<T = unknown>(
       method: "GET",
       headers: buildHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) return { data: null, error: { message: json.error ?? "Request failed", status: res.status } };
+    const json = await readJson<T>(res);
+    if (!res.ok) return apiError(json, res.status);
     return { data: json as T, error: null };
   } catch (err: unknown) {
     return { data: null, error: { message: err instanceof Error ? err.message : "Network error" } };
@@ -94,8 +108,8 @@ export async function apiPost<T = unknown>(
       headers: buildHeaders(),
       body: JSON.stringify(body ?? {}),
     });
-    const json = await res.json();
-    if (!res.ok) return { data: null, error: { message: json.error ?? "Request failed", status: res.status } };
+    const json = await readJson<T>(res);
+    if (!res.ok) return apiError(json, res.status);
     return { data: json as T, error: null };
   } catch (err: unknown) {
     return { data: null, error: { message: err instanceof Error ? err.message : "Network error" } };
@@ -112,8 +126,8 @@ export async function apiPatch<T = unknown>(
       headers: buildHeaders(),
       body: JSON.stringify(body ?? {}),
     });
-    const json = await res.json();
-    if (!res.ok) return { data: null, error: { message: json.error ?? "Request failed", status: res.status } };
+    const json = await readJson<T>(res);
+    if (!res.ok) return apiError(json, res.status);
     return { data: json as T, error: null };
   } catch (err: unknown) {
     return { data: null, error: { message: err instanceof Error ? err.message : "Network error" } };
@@ -130,8 +144,8 @@ export async function apiPut<T = unknown>(
       headers: buildHeaders(),
       body: JSON.stringify(body ?? {}),
     });
-    const json = await res.json();
-    if (!res.ok) return { data: null, error: { message: json.error ?? "Request failed", status: res.status } };
+    const json = await readJson<T>(res);
+    if (!res.ok) return apiError(json, res.status);
     return { data: json as T, error: null };
   } catch (err: unknown) {
     return { data: null, error: { message: err instanceof Error ? err.message : "Network error" } };
@@ -144,8 +158,8 @@ export async function apiDelete<T = unknown>(path: string): Promise<ApiResponse<
       method: "DELETE",
       headers: buildHeaders(),
     });
-    const json = await res.json();
-    if (!res.ok) return { data: null, error: { message: json.error ?? "Request failed", status: res.status } };
+    const json = await readJson<T>(res);
+    if (!res.ok) return apiError(json, res.status);
     return { data: json as T, error: null };
   } catch (err: unknown) {
     return { data: null, error: { message: err instanceof Error ? err.message : "Network error" } };
