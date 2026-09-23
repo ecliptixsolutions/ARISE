@@ -19,13 +19,8 @@ export type SignInResult =
   | { user: null; token: null; error: string };
 
 export async function signIn(email: string, password: string): Promise<SignInResult> {
-  let { data, error } = await apiPost<{ token: string; user: AriseUser }>("/api/auth/login", {
-    email,
-    password,
-  });
-  if (error?.status === 429) {
-    ({ data, error } = await directLogin(email, password));
-  }
+  let { data, error } = await directLogin(email, password);
+  if (error?.status === undefined) ({ data, error } = await apiPost<{ token: string; user: AriseUser }>("/api/auth/login", { email, password }));
   if (error) return { user: null, token: null, error: error.message };
   setSessionToken(data.token);
   return { user: data.user, token: data.token, error: null };
