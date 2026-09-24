@@ -75,7 +75,7 @@ async function uploadBlogThumbnail(file: File) {
     category: "blog-thumbnail",
     is_primary: 0,
   });
-  if (error) throw new Error(error.message);
+  if (error) console.warn("Thumbnail catalog sync failed:", error.message);
   return { url: json.url, alt: json.alt ?? file.name.replace(/\.[^.]+$/, "") };
 }
 
